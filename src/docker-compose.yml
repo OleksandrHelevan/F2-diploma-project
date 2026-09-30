@@ -1,0 +1,72 @@
+services:
+
+  postgres-users:
+    image: postgres:16-alpine
+    container_name: bricklayers-users-db
+    environment:
+      POSTGRES_DB: users_db
+      POSTGRES_USER: users_service
+      POSTGRES_PASSWORD: users_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - users_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U users_service -d users_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: bricklayers-keycloak
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8081
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak/bricklayers-realm.json:/opt/keycloak/data/import/bricklayers-realm.json
+
+  user-service:
+    build:
+      context: ./web-api/user-service
+      dockerfile: Dockerfile
+    container_name: bricklayers-user-service
+    depends_on:
+      postgres-users:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-users:5432/users_db
+      SPRING_DATASOURCE_USERNAME: users_service
+      SPRING_DATASOURCE_PASSWORD: users_password
+      KEYCLOAK_ISSUER_URI: http://localhost:8081/realms/bricklayers
+      KEYCLOAK_TOKEN_URI: http://keycloak:8080/realms/bricklayers/protocol/openid-connect/token
+      KEYCLOAK_USER_INFO_URI: http://keycloak:8080/realms/bricklayers/protocol/openid-connect/userinfo
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/bricklayers/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/bricklayers/protocol/openid-connect/certs
+      KEYCLOAK_CLIENT_ID: user-service
+      KEYCLOAK_CLIENT_SECRET: user-service-secret
+    ports:
+      - "8080:8080"
+
+  web-app:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile
+    container_name: bricklayers-web-app
+    depends_on:
+      user-service:
+        condition: service_started
+    ports:
+      - "5173:80"
+
+volumes:
+  users_db_data:

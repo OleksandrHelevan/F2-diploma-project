@@ -1,0 +1,119 @@
+{
+  "realm": "bricklayers",
+  "enabled": true,
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "roles": {
+    "realm": [
+      { "name": "SUPERADMIN", "description": "Full user CUD via API/UI" },
+      { "name": "CUSTOMER", "description": "Bricklayers customer" },
+      { "name": "FOREMAN", "description": "Site foreman" },
+      { "name": "BUILDER", "description": "Builder worker" },
+      { "name": "SUPPLIER", "description": "Supplier" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "user-service",
+      "name": "user-service",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "user-service-secret",
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ]
+    },
+    {
+      "clientId": "bricklayers-web-app",
+      "name": "bricklayers-web-app",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "superadmin",
+      "enabled": true,
+      "email": "superadmin@bricklayers.local",
+      "emailVerified": true,
+      "firstName": "Super",
+      "lastName": "Admin",
+      "realmRoles": ["SUPERADMIN"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "superadmin",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "worker",
+      "enabled": true,
+      "email": "worker@bricklayers.local",
+      "emailVerified": true,
+      "firstName": "Ivan",
+      "lastName": "Builder",
+      "realmRoles": ["BUILDER"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "worker",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "oleksandrhelevan",
+      "enabled": true,
+      "email": "oleksandrhelevan@gmail.com",
+      "emailVerified": true,
+      "firstName": "Oleksandr",
+      "lastName": "Helevan",
+      "realmRoles": ["SUPERADMIN"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "1234qwer",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
