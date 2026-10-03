@@ -9,10 +9,12 @@ package com.bricklayers.projectsservice.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.UUID;
 
+@NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
@@ -25,5 +27,5 @@ public class Product {
     private String unit;
     private double price;
     private int amount;
-    private boolean isAvailable;
+    private boolean available;
 }
