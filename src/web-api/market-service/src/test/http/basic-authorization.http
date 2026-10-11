@@ -1,0 +1,107 @@
+### GET All products Happy Path
+GET http://localhost:8082/api/v1/products
+Authorization: Basic oleksandr oleksandr
+Accept: application/json
+###
+
+### GET All products Bad credentials
+GET http://localhost:8082/api/v1/products
+Authorization: Basic oleksandr oleksandr1
+Accept: application/json
+###
+
+### GET One product Happy Path
+GET http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
+Authorization: Basic oleksandr oleksandr
+Accept: application/json
+###
+
+### GET One product Bad credentials
+GET http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
+Authorization: Basic oleksandr oleksandr
+Accept: application/json
+###
+
+### CREATE One product Happy Path
+POST http://localhost:8082/api/v1/products
+Authorization: Basic oleksandr oleksandr
+Content-Type: application/json
+
+{
+  "id": "915db4bc-9bc6-439b-a769-a53a54eb5fc8",
+  "supplierId": "49d81772-4eb3-466c-a257-0300c1e89de6",
+  "name": "Цемент М500",
+  "description": "Портландцемент М500, мішок 25 кг",
+  "category": "Сипучі матеріали",
+  "unit": "мішок",
+  "price": 190.0,
+  "amount": 1000,
+  "available": true
+}
+###
+
+### CREATE One product Bad credentials
+POST http://localhost:8082/api/v1/products
+Authorization: Basic oleksandr oleksandr1
+Content-Type: application/json
+
+{
+  "id": "915db4bc-9bc6-439b-a769-a53a54eb5fc8",
+  "supplierId": "49d81772-4eb3-466c-a257-0300c1e89de6",
+  "name": "Цемент М500",
+  "description": "Портландцемент М500, мішок 25 кг",
+  "category": "Сипучі матеріали",
+  "unit": "мішок",
+  "price": 190.0,
+  "amount": 1000,
+  "available": true
+}
+###
+
+### UPDATE One product Happy Path
+PUT http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
+Authorization: Basic oleksandr oleksandr
+Content-Type: application/json
+
+{
+  "id": "915db4bc-9bc6-439b-a769-a53a54eb5fc8",
+  "supplierId": "49d81772-4eb3-466c-a257-0300c1e89de6",
+  "name": "Цемент М500",
+  "description": "Портландцемент М500, мішок 25 кг",
+  "category": "Сипучі матеріали",
+  "unit": "мішок",
+  "price": 200.0,
+  "amount": 700,
+  "available": true
+}
+###
+
+### UPDATE One product Bad credentials
+PUT http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
+Authorization: Basic oleksandr oleksandr1
+Content-Type: application/json
+
+{
+  "id": "915db4bc-9bc6-439b-a769-a53a54eb5fc8",
+  "supplierId": "49d81772-4eb3-466c-a257-0300c1e89de6",
+  "name": "Цемент М500",
+  "description": "Портландцемент М500, мішок 25 кг",
+  "category": "Сипучі матеріали",
+  "unit": "мішок",
+  "price": 200.0,
+  "amount": 700,
+  "available": true
+}
+###
+
+### DELETE One product Bad credentials
+DELETE http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
+Authorization: Basic oleksandr oleksandr1
+Content-Type: application/json
+###
+
+### DELETE One product Happy Path
+DELETE http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
+Authorization: Basic oleksandr oleksandr
+Content-Type: application/json
+###

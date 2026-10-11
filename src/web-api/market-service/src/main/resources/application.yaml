@@ -1,6 +1,10 @@
 spring:
   application:
     name: market-service
+  security:
+    user:
+      password: oleksandr
+      name: oleksandr
 
 server:
   port: ${SERVER_PORT:8082}
