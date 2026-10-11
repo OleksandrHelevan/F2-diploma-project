@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import Keycloak from 'keycloak-js'
+import ChatDemo from './ChatDemo'
 import './App.css'
 
 type User = {
@@ -26,7 +27,7 @@ type FormState = {
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
 const keycloak = new Keycloak({
-  url: 'http://localhost:8081',
+  url: 'http://localhost:8084',
   realm: 'bricklayers',
   clientId: 'bricklayers-web-app',
 })
@@ -40,7 +41,7 @@ const emptyForm: FormState = {
   companyId: '',
 }
 
-function App() {
+function UserServiceApp() {
   const [users, setUsers] = useState<User[]>([])
   const [form, setForm] = useState<FormState>(emptyForm)
   const [status, setStatus] = useState('')
@@ -244,6 +245,7 @@ function App() {
           <p className="signed-in">Signed in as {username}</p>
         </div>
         <div className="topbar-actions">
+          <a className="secondary-button" href="/chat">Open chat demo</a>
           <button type="button" className="secondary-button" onClick={() => void loadUsers()}>Refresh users</button>
           <button type="button" className="danger-button" onClick={logout}>Sign out</button>
         </div>
@@ -381,6 +383,10 @@ function App() {
       </section>
     </main>
   )
+}
+
+function App() {
+  return window.location.pathname === '/users' ? <UserServiceApp /> : <ChatDemo />
 }
 
 export default App

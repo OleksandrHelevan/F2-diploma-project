@@ -1,5 +1,7 @@
 package com.bricklayers.userservice.controller;
 
+import com.bricklayers.userservice.annotation.CurrentUserId;
+import com.bricklayers.userservice.annotation.SuperAdminDelete;
 import com.bricklayers.userservice.dto.CreateUserRequest;
 import com.bricklayers.userservice.dto.UpdateUserRequest;
 import com.bricklayers.userservice.dto.UserDto;
@@ -49,10 +51,14 @@ public class UserController {
         return ResponseEntity.ok(userService.update(id, request));
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPERADMIN')")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @SuperAdminDelete("/{id}")
     public void delete(@PathVariable UUID id) {
         userService.delete(id);
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserDto> me(@CurrentUserId UUID userId) {
+        return ResponseEntity.ok(userService.getById(userId));
     }
 }

@@ -1,3 +1,16 @@
 spring:
   application:
     name: chat-service
+  mongodb:
+    uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/chat_db}
+    database: ${SPRING_DATA_MONGODB_NAME:chat_db}
+
+server:
+  port: ${SERVER_PORT:8083}
+
+user-service:
+  url: ${USER_SERVICE_URL:http://localhost:8080}
+
+chat:
+  demo:
+    enabled: ${CHAT_DEMO_ENABLED:false}

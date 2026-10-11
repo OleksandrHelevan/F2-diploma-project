@@ -1,6 +1,7 @@
 package com.bricklayers.userservice.dto;
 
 import com.bricklayers.userservice.entity.Role;
+import com.bricklayers.userservice.annotation.ValidRoleCompany;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -8,6 +9,7 @@ import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
+@ValidRoleCompany
 public record CreateUserRequest(
 
         @NotBlank(message = "{validation.username.required}")

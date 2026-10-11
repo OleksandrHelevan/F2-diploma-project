@@ -8,12 +8,15 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Method;
 import java.util.Locale;
@@ -98,6 +101,34 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().message()).isEqualTo("Insufficient permissions to perform this action");
+    }
+
+    @Test
+    void handleResponseStatus_preservesUnauthorizedStatus() {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+
+        ResponseEntity<ErrorResponse> response = handler.handleResponseStatus(
+                new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password"),
+                request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(401);
+        assertThat(response.getBody().message()).isEqualTo("Invalid username or password");
+    }
+
+    @Test
+    void handleNotFound_returnsNotFoundInsteadOfInternalServerError() {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/users/register");
+
+        ResponseEntity<ErrorResponse> response = handler.handleNotFound(
+                new NoResourceFoundException(HttpMethod.POST, "/api/v1/users/register", ""),
+                request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(404);
+        assertThat(response.getBody().path()).isEqualTo("/api/v1/users/register");
     }
 
     @Test

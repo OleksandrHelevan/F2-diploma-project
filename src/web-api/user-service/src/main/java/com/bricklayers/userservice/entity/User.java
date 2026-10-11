@@ -61,14 +61,14 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "password_hash")
+    private String passwordHash;
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
-        if (!this.active) {
-            this.active = true;
-        }
     }
 
     @PreUpdate

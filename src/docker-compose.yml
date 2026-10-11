@@ -1,72 +1,99 @@
+name: bricklayers
 services:
 
   postgres-users:
-    image: postgres:16-alpine
-    container_name: bricklayers-users-db
+    image: postgres:${POSTGRES_VERSION:-16-alpine}
+    container_name: ${POSTGRES_CONTAINER_NAME:-bricklayers-users-db}
     environment:
-      POSTGRES_DB: users_db
-      POSTGRES_USER: users_service
-      POSTGRES_PASSWORD: users_password
+      POSTGRES_DB: ${USERS_DB_NAME:-users_db}
+      POSTGRES_USER: ${USERS_DB_USER:-users_service}
+      POSTGRES_PASSWORD: ${USERS_DB_PASSWORD:-users_password}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - users_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U users_service -d users_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: ${DB_HEALTHCHECK_INTERVAL:-5s}
+      timeout: ${DB_HEALTHCHECK_TIMEOUT:-5s}
+      retries: ${DB_HEALTHCHECK_RETRIES:-10}
 
   keycloak:
-    image: quay.io/keycloak/keycloak:25.0
-    container_name: bricklayers-keycloak
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-25.0}
+    container_name: ${KEYCLOAK_CONTAINER_NAME:-bricklayers-keycloak}
     command: start-dev --import-realm
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_PORT: 8081
-      KC_HOSTNAME_STRICT: "false"
-      KC_HTTP_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HOSTNAME: http://${KEYCLOAK_HOST:-localhost}:${AUTH_SERVICE_PORT:-8084}
+      KC_HOSTNAME_STRICT: ${KEYCLOAK_HOSTNAME_STRICT:-false}
+      KC_HTTP_ENABLED: ${KEYCLOAK_HTTP_ENABLED:-true}
     ports:
-      - "8081:8080"
+      - "${AUTH_SERVICE_PORT:-8084}:8080"
     volumes:
-      - ./keycloak/bricklayers-realm.json:/opt/keycloak/data/import/bricklayers-realm.json
-
+      - "${KEYCLOAK_REALM_FILE:-./keycloak/bricklayers-realm.json}:/opt/keycloak/data/import/bricklayers-realm.json"
   user-service:
     build:
       context: ./web-api/user-service
       dockerfile: Dockerfile
-    container_name: bricklayers-user-service
+    container_name: ${USER_SERVICE_CONTAINER_NAME:-bricklayers-user-service}
     depends_on:
       postgres-users:
         condition: service_healthy
-      keycloak:
+    environment:
+      SERVER_PORT: ${USER_SERVICE_INTERNAL_PORT:-8081}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-users:5432/${USERS_DB_NAME:-users_db}
+      SPRING_DATASOURCE_USERNAME: ${USERS_DB_USER:-users_service}
+      SPRING_DATASOURCE_PASSWORD: ${USERS_DB_PASSWORD:-users_password}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in src/.env to a random value of at least 32 characters}
+      JWT_ISSUER: ${JWT_ISSUER:-bricklayers-user-service}
+      LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_USERNAME: ${LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_USERNAME:-superadmin}
+      LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_PASSWORD: ${LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_PASSWORD:-}
+    ports:
+      - "${USER_SERVICE_PORT:-8081}:${USER_SERVICE_INTERNAL_PORT:-8081}"
+
+  project-service:
+    build:
+      context: ./web-api/market-service
+      dockerfile: Dockerfile
+    container_name: ${PROJECT_SERVICE_CONTAINER_NAME:-bricklayers-project-service}
+    environment:
+      SERVER_PORT: ${PROJECT_SERVICE_INTERNAL_PORT:-8082}
+    ports:
+      - "${PROJECT_SERVICE_PORT:-8082}:${PROJECT_SERVICE_INTERNAL_PORT:-8082}"
+
+  chat-service:
+    build:
+      context: ./web-api/chat-service
+      dockerfile: Dockerfile
+    container_name: ${CHAT_SERVICE_CONTAINER_NAME:-bricklayers-chat-service}
+    depends_on:
+      user-service:
         condition: service_started
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-users:5432/users_db
-      SPRING_DATASOURCE_USERNAME: users_service
-      SPRING_DATASOURCE_PASSWORD: users_password
-      KEYCLOAK_ISSUER_URI: http://localhost:8081/realms/bricklayers
-      KEYCLOAK_TOKEN_URI: http://keycloak:8080/realms/bricklayers/protocol/openid-connect/token
-      KEYCLOAK_USER_INFO_URI: http://keycloak:8080/realms/bricklayers/protocol/openid-connect/userinfo
-      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/bricklayers/protocol/openid-connect/certs
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/bricklayers/protocol/openid-connect/certs
-      KEYCLOAK_CLIENT_ID: user-service
-      KEYCLOAK_CLIENT_SECRET: user-service-secret
+      SERVER_PORT: ${CHAT_SERVICE_INTERNAL_PORT:-8083}
+      SPRING_DATA_MONGODB_URI: ${MONGO_URI:?Set MONGO_URI in src/.env to your MongoDB Atlas connection string}
+      SPRING_DATA_MONGODB_NAME: ${SPRING_DATA_MONGODB_NAME:-chat_db}
+      USER_SERVICE_URL: ${USER_SERVICE_INTERNAL_URL:-http://user-service:8081}
+      CHAT_DEMO_ENABLED: ${CHAT_DEMO_ENABLED:-true}
     ports:
-      - "8080:8080"
+      - "${CHAT_SERVICE_PORT:-8083}:${CHAT_SERVICE_INTERNAL_PORT:-8083}"
 
   web-app:
     build:
       context: ./web-app
       dockerfile: Dockerfile
-    container_name: bricklayers-web-app
+    container_name: ${WEB_APP_CONTAINER_NAME:-bricklayers-web-app}
     depends_on:
       user-service:
         condition: service_started
+      project-service:
+        condition: service_started
+      chat-service:
+        condition: service_started
     ports:
-      - "5173:80"
+      - "${WEB_APP_PORT:-3000}:${WEB_APP_INTERNAL_PORT:-3000}"
 
 volumes:
   users_db_data:
+    name: ${USERS_DB_VOLUME:-users_db_data}

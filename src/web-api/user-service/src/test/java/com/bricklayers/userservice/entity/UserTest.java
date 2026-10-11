@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserTest {
 
     @Test
-    void onCreate_setsAuditFieldsAndActivatesUser() {
+    void onCreate_setsAuditFieldsAndPreservesActiveState() {
         User user = User.builder()
                 .username("builder")
                 .email("builder@example.com")
@@ -22,7 +22,7 @@ class UserTest {
         assertThat(user.getCreatedAt()).isNotNull();
         assertThat(user.getUpdatedAt()).isNotNull();
         assertThat(user.getCreatedAt()).isEqualTo(user.getUpdatedAt());
-        assertThat(user.isActive()).isTrue();
+        assertThat(user.isActive()).isFalse();
     }
 
     @Test
