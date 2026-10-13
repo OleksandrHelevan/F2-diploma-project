@@ -64,8 +64,8 @@ public class KeycloakUserSyncScheduler {
         }
 
         SyncResult result = importService.synchronize(importedUsers);
-        log.info("Keycloak user synchronization completed: {} created, {} updated",
-                result.created(), result.updated());
+        log.info("Keycloak user synchronization completed: {} created, {} updated, {} identity conflicts skipped",
+                result.created(), result.updated(), result.skippedConflicts());
     }
 
     private KeycloakUserRecord toRecord(KeycloakUser user, List<KeycloakRole> assignedRoles) {

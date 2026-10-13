@@ -28,10 +28,13 @@ services:
       KC_HOSTNAME: http://${KEYCLOAK_HOST:-localhost}:${AUTH_SERVICE_PORT:-8084}
       KC_HOSTNAME_STRICT: ${KEYCLOAK_HOSTNAME_STRICT:-false}
       KC_HTTP_ENABLED: ${KEYCLOAK_HTTP_ENABLED:-true}
+      KC_SPI_THEME_CACHE_THEMES: "false"
+      KC_SPI_THEME_CACHE_TEMPLATES: "false"
     ports:
       - "${AUTH_SERVICE_PORT:-8084}:8080"
     volumes:
       - "${KEYCLOAK_REALM_FILE:-./keycloak/bricklayers-realm.json}:/opt/keycloak/data/import/bricklayers-realm.json"
+      - ./keycloak/themes:/opt/keycloak/themes:ro
   user-service:
     build:
       context: ./web-api/user-service
@@ -40,17 +43,34 @@ services:
     depends_on:
       postgres-users:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     environment:
       SERVER_PORT: ${USER_SERVICE_INTERNAL_PORT:-8081}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-users:5432/${USERS_DB_NAME:-users_db}
       SPRING_DATASOURCE_USERNAME: ${USERS_DB_USER:-users_service}
       SPRING_DATASOURCE_PASSWORD: ${USERS_DB_PASSWORD:-users_password}
-      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in src/.env to a random value of at least 32 characters}
-      JWT_ISSUER: ${JWT_ISSUER:-bricklayers-user-service}
-      LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_USERNAME: ${LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_USERNAME:-superadmin}
-      LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_PASSWORD: ${LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_PASSWORD:-}
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_ISSUER_URI: http://${KEYCLOAK_HOST:-localhost}:${AUTH_SERVICE_PORT:-8084}/realms/${KEYCLOAK_REALM:-bricklayers}
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/${KEYCLOAK_REALM:-bricklayers}/protocol/openid-connect/certs
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-bricklayers}
+      KEYCLOAK_ADMIN_CLIENT_ID: user-sync-service
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-user-sync-service-secret}
+      KEYCLOAK_SYNC_ENABLED: ${KEYCLOAK_SYNC_ENABLED:-true}
     ports:
       - "${USER_SERVICE_PORT:-8081}:${USER_SERVICE_INTERNAL_PORT:-8081}"
+
+  keycloak-swagger:
+    image: swaggerapi/swagger-ui:v5.18.2
+    container_name: ${KEYCLOAK_SWAGGER_CONTAINER_NAME:-bricklayers-keycloak-swagger}
+    environment:
+      URL: /keycloak-openapi.yaml
+      OAUTH_CLIENT_ID: bricklayers-web-app
+      OAUTH_USE_PKCE: "true"
+    ports:
+      - "${KEYCLOAK_SWAGGER_PORT:-8085}:8080"
+    volumes:
+      - ./keycloak/openapi.yaml:/usr/share/nginx/html/keycloak-openapi.yaml:ro
 
   project-service:
     build:
@@ -70,12 +90,16 @@ services:
     depends_on:
       user-service:
         condition: service_started
+      keycloak:
+        condition: service_started
     environment:
       SERVER_PORT: ${CHAT_SERVICE_INTERNAL_PORT:-8083}
       SPRING_DATA_MONGODB_URI: ${MONGO_URI:?Set MONGO_URI in src/.env to your MongoDB Atlas connection string}
       SPRING_DATA_MONGODB_NAME: ${SPRING_DATA_MONGODB_NAME:-chat_db}
       USER_SERVICE_URL: ${USER_SERVICE_INTERNAL_URL:-http://user-service:8081}
-      CHAT_DEMO_ENABLED: ${CHAT_DEMO_ENABLED:-true}
+      KEYCLOAK_ISSUER_URI: http://${KEYCLOAK_HOST:-localhost}:${AUTH_SERVICE_PORT:-8084}/realms/${KEYCLOAK_REALM:-bricklayers}
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/${KEYCLOAK_REALM:-bricklayers}/protocol/openid-connect/certs
+      CHAT_DEMO_ENABLED: ${CHAT_DEMO_ENABLED:-false}
     ports:
       - "${CHAT_SERVICE_PORT:-8083}:${CHAT_SERVICE_INTERNAL_PORT:-8083}"
 

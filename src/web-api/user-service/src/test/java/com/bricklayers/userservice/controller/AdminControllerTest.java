@@ -4,13 +4,13 @@ import com.bricklayers.userservice.dto.SetPasswordRequest;
 import com.bricklayers.userservice.entity.Role;
 import com.bricklayers.userservice.entity.User;
 import com.bricklayers.userservice.exception.UserNotFoundException;
+import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient;
 import com.bricklayers.userservice.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -27,7 +27,7 @@ class AdminControllerTest {
     private UserRepository userRepository;
 
     @Mock
-    private PasswordEncoder passwordEncoder;
+    private KeycloakAdminClient keycloakAdminClient;
 
     @InjectMocks
     private AdminController adminController;
@@ -44,22 +44,23 @@ class AdminControllerTest {
     }
 
     @Test
-    void setPasswordStoresOnlyEncodedPassword() {
+    void setPasswordUpdatesKeycloakAccount() {
         UUID userId = UUID.randomUUID();
         User user = User.builder()
                 .id(userId)
+                .keycloakId("keycloak-user-id")
                 .username("builder")
                 .email("builder@example.com")
                 .role(Role.BUILDER)
                 .active(true)
                 .build();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(passwordEncoder.encode("new-password-123")).thenReturn("bcrypt-hash");
+        when(keycloakAdminClient.getAccessToken()).thenReturn("service-token");
 
         adminController.setPassword(userId, new SetPasswordRequest("new-password-123"));
 
-        assertThat(user.getPasswordHash()).isEqualTo("bcrypt-hash");
-        verify(userRepository).save(user);
+        verify(keycloakAdminClient).updatePassword(
+                "keycloak-user-id", "new-password-123", "service-token");
     }
 
     @Test

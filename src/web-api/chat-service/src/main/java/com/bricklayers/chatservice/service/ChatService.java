@@ -65,17 +65,26 @@ public class ChatService {
         }
 
         UserInfo target = userDirectory.getUser(request.targetUserId());
+        ParticipantRole targetRole;
+        try {
+            if (target.role() == null || !target.active()) {
+                throw new IllegalArgumentException("Target profile is inactive or has no chat role");
+            }
+            targetRole = ParticipantRole.valueOf(target.role());
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidChatOperationException("Цей користувач не підходить для чату такого типу");
+        }
         ParticipantRole expectedRole = request.type() == ChatType.FOREMAN_BUILDER
                 ? ParticipantRole.BUILDER
                 : ParticipantRole.SUPPLIER;
 
-        if (target.role() != expectedRole || !user.companyId().equals(target.companyId())) {
+        if (targetRole != expectedRole || !user.companyId().equals(target.companyId())) {
             throw new InvalidChatOperationException("Цей користувач не підходить для чату такого типу");
         }
 
         String directKey = directKey(request.type(), user.userId(), target.id());
         Chat chat = chatRepository.findByDirectKey(directKey)
-                .orElseGet(() -> createDirect(request.type(), directKey, user, target));
+                .orElseGet(() -> createDirect(request.type(), directKey, user, target, targetRole));
 
         return toResponse(chat, user.userId());
     }
@@ -93,7 +102,13 @@ public class ChatService {
         }
     }
 
-    private Chat createDirect(ChatType type, String directKey, UserContext user, UserInfo target) {
+    private Chat createDirect(
+            ChatType type,
+            String directKey,
+            UserContext user,
+            UserInfo target,
+            ParticipantRole targetRole
+    ) {
         LocalDateTime now = LocalDateTime.now();
         Chat chat = Chat.builder()
                 .companyId(user.companyId())
@@ -101,7 +116,7 @@ public class ChatService {
                 .directKey(directKey)
                 .participants(new ArrayList<>(List.of(
                         participant(user.userId(), ParticipantRole.FOREMAN, now),
-                        participant(target.id(), target.role(), now))))
+                        participant(target.id(), targetRole, now))))
                 .createdAt(now)
                 .lastMessageAt(now)   // щоб новий чат не провалився в кінець списку
                 .build();

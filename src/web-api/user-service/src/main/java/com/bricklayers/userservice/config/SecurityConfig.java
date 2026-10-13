@@ -13,14 +13,17 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import javax.crypto.SecretKey;
 import java.util.List;
 
 @Configuration
@@ -37,7 +40,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/", "/css/**", "/error", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/auth/login", "/api/v1/auth/register").permitAll()
+                    .requestMatchers("/", "/css/**", "/error", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("SUPERADMIN")
                         .requestMatchers("/api/v1/**").authenticated()
                         .requestMatchers("/users/**").authenticated()
@@ -77,13 +80,16 @@ public class SecurityConfig {
 
     @Bean
     JwtDecoder jwtDecoder(
-            SecretKey localJwtSecret,
-            @Value("${local-auth.jwt.issuer}") String issuerUri) {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder
-                .withSecretKey(localJwtSecret)
-                .macAlgorithm(MacAlgorithm.HS256)
-                .build();
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(issuerUri));
+            @Value("${keycloak.issuer-uri}") String issuerUri,
+            @Value("${keycloak.jwk-set-uri}") String jwkSetUri) {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        OAuth2TokenValidator<Jwt> audienceValidator = jwt -> jwt.getAudience().contains("user-service")
+                ? OAuth2TokenValidatorResult.success()
+                : OAuth2TokenValidatorResult.failure(
+                        new OAuth2Error("invalid_token", "Token audience does not include user-service", null));
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefaultWithIssuer(issuerUri),
+                audienceValidator));
         return decoder;
     }
 

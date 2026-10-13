@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -20,6 +21,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users")
+@SecurityRequirement(name = "keycloak", scopes = {"openid", "profile", "email"})
 @RequiredArgsConstructor
 public class UserController {
 
@@ -36,6 +38,12 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDto> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.getById(id));
+    }
+
+    @GetMapping("/by-keycloak-id/{keycloakId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserDto> getByKeycloakId(@PathVariable String keycloakId) {
+        return ResponseEntity.ok(userService.getByKeycloakId(keycloakId));
     }
 
     @GetMapping

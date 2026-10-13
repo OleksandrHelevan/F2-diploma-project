@@ -11,6 +11,7 @@ package com.bricklayers.chatservice.client;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 @FeignClient(
         name = "user-service",
@@ -19,5 +20,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 )
 public interface UserDirectory {
     @GetMapping("/{userId}")
-    UserInfo getUser(@PathVariable("userId") String userId);
+    UserInfo getUser(@PathVariable String userId);
+
+    @GetMapping("/by-keycloak-id/{keycloakId}")
+    UserInfo getByKeycloakId(
+            @PathVariable("keycloakId") String keycloakId,
+            @RequestHeader("Authorization") String authorization);
 }

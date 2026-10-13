@@ -26,38 +26,63 @@ Atlas. У Atlas перевірте, що IP-адреса має доступ у 
 `docker compose down` у теці `src`). Дані MongoDB залишаються у volume
 `chats_db_data`.
 
-`CHAT_DEMO_ENABLED=true` у compose вмикає демо-ідентичності через заголовки
-запитів. Це призначено лише для локального тестування; не вмикайте цей режим у
-публічному чи production-середовищі.
+`CHAT_DEMO_ENABLED=true` у `src/.env` вмикає демо-ідентичності через заголовки
+запитів. За замовчуванням цей режим вимкнений: REST API і WebSocket чату
+приймають лише Keycloak Bearer token. Демо-режим призначено тільки для
+локального тестування; не вмикайте його у публічному чи production-середовищі.
 Для запуску Compose обов’язково має бути заданий `MONGO_URI`; без нього Compose
 завершиться з помилкою конфігурації замість спроби підключитися до localhost.
 
-User Service використовує локальну PostgreSQL базу для профілів, паролів і
-ролей; Keycloak-синхронізація вимкнена. Паролі зберігаються лише як BCrypt
-хеші. Налаштуйте `JWT_SECRET` у `src/.env` як випадковий секрет щонайменше
-32 символів; ним User Service підписує access tokens. Згенерувати секрет можна
-командою `openssl rand -hex 32`.
+Keycloak є єдиним джерелом автентифікації, реєстрації, паролів і access token-ів.
+PostgreSQL у User Service зберігає лише профіль користувача та `keycloak_id`;
+пароль і його хеш у цій базі не зберігаються. Реєстрація та вхід відбуваються
+на hosted login/register сторінках Keycloak. API `/api/v1/auth/login` і
+`/api/v1/auth/register` у User Service видалені. Синхронізація Keycloak
+користувачів створює локальні профілі.
 
-У Postman реєструйте нового BUILDER через `POST /api/v1/auth/register`, а потім
-отримуйте локальний JWT через `POST /api/v1/auth/login`. Використовуйте поле
-`access_token` як Bearer-токен для `GET /api/v1/users/me`. Старі Keycloak JWT
-після переходу на локальну автентифікацію більше не приймаються.
+`POST /api/v1/users` для SUPERADMIN створює користувача та його роль у Keycloak,
+а потім локальний профіль із `keycloak_id`. Якщо збереження профілю не вдається,
+створений Keycloak акаунт видаляється. Такий акаунт починається без пароля:
+SUPERADMIN може задати його через `PUT /api/v1/admin/users/{id}/password`.
+Секрет сервісної інтеграції `KEYCLOAK_ADMIN_CLIENT_SECRET` має збігатися з
+клієнтом `user-sync-service` у файлі realm. Access token-и повинні містити
+audiences `user-service` і `chat-service`.
 
-Для першого локального входу SUPERADMIN скопіюйте username відповідного
-SUPERADMIN-профілю з локальної таблиці `users` у
-`LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_USERNAME`, задайте одноразовий
-`LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_PASSWORD` у `src/.env` і перебудуйте
-`user-service`. Пароль буде записаний як BCrypt хеш лише якщо профіль ще не має
-пароля; після першого запуску видаліть bootstrap пароль із `.env`. Увійшовши
-SUPERADMIN-ом, задайте пароль наявному локальному користувачу через
-`PUT /api/v1/admin/users/{id}/password` з JSON `{"password":"..."}`. Публічна
-реєстрація не може змінити пароль уже наявного профілю.
+Реєстрацію користувачів вмикає `registrationAllowed` у realm, тоді посилання
+Register з'являється на сторінці входу Keycloak. Тема `bricklayers` уже
+підключена з `src/keycloak/themes/bricklayers/login`: змінюйте
+`resources/css/login.css` для оформлення, `theme.properties` для налаштувань;
+для повної кастомізації можна додати шаблони FreeMarker, повідомлення та
+зображення. Сторінки login і register використовують спільну login theme.
+
+Якщо realm вже існував до змін, імпорт realm не перезаписує його. Оновіть
+`bricklayers-web-app` redirect URI для Swagger, audience mappers,
+самореєстрацію та login theme `bricklayers` через Keycloak Admin Console.
+
+Після оновлення існуючої бази Liquibase видаляє застарілу колонку
+`password_hash`. Для вже існуючих Keycloak користувачів синхронізація зв'яже
+локальний профіль за username/email і запише `keycloak_id`.
 
 Чат-сервіс також надає REST API під `/api/v1/chats` для перегляду й створення
 чатів, історії повідомлень, надсилання/редагування/видалення повідомлень,
 реакцій і статусів прочитання. WebSocket STOMP endpoint: `/ws`; клієнт
 підписується на `/topic/chats/{chatId}` і надсилає подію набору тексту в
 `/app/chats/{chatId}/typing`.
+
+Усі три сервіси мають Swagger UI: User Service — `http://localhost:8081/swagger-ui.html`,
+Chat Service — `http://localhost:8083/swagger-ui.html`, а документовані OIDC та
+Admin REST endpoints Keycloak — `http://localhost:8085`. У Swagger UI сервісів
+натисніть **Authorize**, увійдіть через Keycloak і використовуйте отриманий
+Bearer token. У User Service `GET /api/v1/users/by-keycloak-id/{keycloakId}`
+використовується Chat Service для зв'язування Keycloak `sub` з профілем;
+внутрішній виклик передає той самий токен, що й запит клієнта.
+
+Для Swagger натисніть **Authorize** і виконайте OAuth Authorization Code +
+PKCE через Keycloak. Наявна у браузері Keycloak SSO-сесія буде повторно
+використана. API отримує access token саме залогіненого користувача, тому
+адміністративні операції User Service доступні лише ролі `SUPERADMIN`;
+інші ролі отримують `403` там, де їм заборонено доступ. Swagger показує всі
+операції, а авторизацію завжди перевіряє сам API.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

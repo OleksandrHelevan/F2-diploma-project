@@ -13,6 +13,8 @@ public interface UserService {
 
     UserDto getById(UUID id);
 
+    UserDto getByKeycloakId(String keycloakId);
+
     List<UserDto> getAll();
 
     UserDto update(UUID id, UpdateUserRequest request);

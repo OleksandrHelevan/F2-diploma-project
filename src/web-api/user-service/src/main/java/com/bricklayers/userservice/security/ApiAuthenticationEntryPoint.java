@@ -19,17 +19,13 @@ public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest request,
                          @NonNull HttpServletResponse response,
                          @NonNull AuthenticationException authException) throws IOException {
-        if (request.getRequestURI().startsWith("/api/")) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-            String body = """
-                    {"timestamp":"%s","status":401,"error":"Unauthorized","message":"Authentication required","path":"%s"}
-                    """.formatted(LocalDateTime.now(), escapeJson(request.getRequestURI()));
-            response.getWriter().write(body.trim());
-            return;
-        }
-        response.sendRedirect("/oauth2/authorization/keycloak");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        String body = """
+                {"timestamp":"%s","status":401,"error":"Unauthorized","message":"Authentication required","path":"%s"}
+                """.formatted(LocalDateTime.now(), escapeJson(request.getRequestURI()));
+        response.getWriter().write(body.trim());
     }
 
     private static String escapeJson(String value) {

@@ -4,3 +4,5 @@ databaseChangeLog:
       relativeToChangelogFile: false
   - include:
       file: db/changelog/changes/02-add-password-hash.yaml
+  - include:
+      file: db/changelog/changes/03-remove-password-hash.yaml

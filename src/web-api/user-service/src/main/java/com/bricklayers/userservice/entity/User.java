@@ -61,9 +61,6 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(name = "password_hash")
-    private String passwordHash;
-
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();

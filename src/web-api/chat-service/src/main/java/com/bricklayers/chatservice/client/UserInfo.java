@@ -7,13 +7,12 @@ package com.bricklayers.chatservice.client;
   @version  1.0.0 
   @since 06.10.2026 - 22.09
 */
-import com.bricklayers.chatservice.entity.ParticipantRole;
-
 public record UserInfo(
         String id,
         String username,
         String firstName,
         String lastName,
         String companyId,
-        ParticipantRole role
+        String role,
+        boolean active
 ) {}

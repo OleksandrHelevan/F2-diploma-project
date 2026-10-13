@@ -23,9 +23,9 @@ public class ChatWebSocketController {
             @Payload TypingRequest request,
             Principal principal
     ) {
-        if (!(principal instanceof ChatPrincipal chatPrincipal)) {
+        if (!(principal instanceof ChatPrincipal(com.bricklayers.chatservice.security.UserContext user))) {
             throw new IllegalArgumentException("Chat connection has no user identity");
         }
-        typingService.notifyTyping(chatId, request, chatPrincipal.user());
+        typingService.notifyTyping(chatId, request, user);
     }
 }

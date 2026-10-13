@@ -10,6 +10,7 @@ import com.bricklayers.chatservice.security.UserContext;
 import com.bricklayers.chatservice.service.ChatService;
 import com.bricklayers.chatservice.service.MessageService;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/chats")
+@SecurityRequirement(name = "keycloak", scopes = {"openid", "profile", "email"})
 @RequiredArgsConstructor
 public class ChatController {
 

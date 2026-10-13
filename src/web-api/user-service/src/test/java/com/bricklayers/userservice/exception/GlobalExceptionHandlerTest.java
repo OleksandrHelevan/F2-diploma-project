@@ -105,30 +105,30 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleResponseStatus_preservesUnauthorizedStatus() {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/users");
 
         ResponseEntity<ErrorResponse> response = handler.handleResponseStatus(
-                new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password"),
+                new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required"),
                 request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().status()).isEqualTo(401);
-        assertThat(response.getBody().message()).isEqualTo("Invalid username or password");
+        assertThat(response.getBody().message()).isEqualTo("Authentication required");
     }
 
     @Test
     void handleNotFound_returnsNotFoundInsteadOfInternalServerError() {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/users/register");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/users/not-found");
 
         ResponseEntity<ErrorResponse> response = handler.handleNotFound(
-                new NoResourceFoundException(HttpMethod.POST, "/api/v1/users/register", ""),
+                new NoResourceFoundException(HttpMethod.GET, "/api/v1/users/not-found", ""),
                 request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().status()).isEqualTo(404);
-        assertThat(response.getBody().path()).isEqualTo("/api/v1/users/register");
+        assertThat(response.getBody().path()).isEqualTo("/api/v1/users/not-found");
     }
 
     @Test

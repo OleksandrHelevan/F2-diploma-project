@@ -6,6 +6,7 @@ import com.bricklayers.chatservice.entity.ParticipantRole;
 import com.bricklayers.chatservice.security.UserContext;
 import com.bricklayers.chatservice.service.ChatProvisioningService;
 import com.bricklayers.chatservice.service.ChatService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/chats/demo")
+@SecurityRequirement(name = "keycloak", scopes = {"openid", "profile", "email"})
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "chat.demo.enabled", havingValue = "true")
 public class DemoChatController {

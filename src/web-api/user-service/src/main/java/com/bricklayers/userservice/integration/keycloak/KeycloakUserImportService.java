@@ -3,6 +3,7 @@ package com.bricklayers.userservice.integration.keycloak;
 import com.bricklayers.userservice.entity.Role;
 import com.bricklayers.userservice.entity.User;
 import com.bricklayers.userservice.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @Service
 @ConditionalOnProperty(name = "keycloak.sync.enabled", havingValue = "true")
 @RequiredArgsConstructor
+@Slf4j
 public class KeycloakUserImportService {
 
     private final UserRepository userRepository;
@@ -23,9 +25,18 @@ public class KeycloakUserImportService {
     public SyncResult synchronize(List<KeycloakUserRecord> remoteUsers) {
         int created = 0;
         int updated = 0;
+        int skippedConflicts = 0;
 
         for (KeycloakUserRecord remote : remoteUsers) {
-            User user = findExisting(remote);
+            User user;
+            try {
+                user = findExisting(remote);
+            } catch (IllegalStateException exception) {
+                skippedConflicts++;
+                log.warn("Skipping Keycloak user synchronization due to an identity conflict "
+                        + "(keycloakId={}): {}", remote.keycloakId(), exception.getMessage());
+                continue;
+            }
             if (user == null) {
                 user = new User();
                 user.setKeycloakId(remote.keycloakId());
@@ -41,17 +52,15 @@ public class KeycloakUserImportService {
             user.setLastName(remote.lastName());
             user.setRole(remote.role());
             user.setActive(remote.active());
-            if (remote.companyId() != null) {
-                user.setCompanyId(remote.companyId());
-            }
+            user.setCompanyId(remote.companyId());
             userRepository.save(user);
         }
 
-        return new SyncResult(created, updated);
+        return new SyncResult(created, updated, skippedConflicts);
     }
 
     private User findExisting(KeycloakUserRecord remote) {
-        List<User> byKeycloakId = userRepository.findAllByKeycloakId(remote.keycloakId());
+        Optional<User> byKeycloakId = userRepository.findByKeycloakId(remote.keycloakId());
         Optional<User> byUsername = userRepository.findByUsername(remote.username());
         Optional<User> byEmail = userRepository.findByEmail(remote.email());
 
@@ -70,11 +79,7 @@ public class KeycloakUserImportService {
             }
             return user;
         }
-        if (byKeycloakId.size() > 1) {
-            throw new IllegalStateException(
-                    "Multiple local accounts have the Keycloak ID for user: " + remote.username());
-        }
-        return byKeycloakId.stream().findFirst().orElse(null);
+        return byKeycloakId.orElse(null);
     }
 
     public record KeycloakUserRecord(
@@ -88,5 +93,5 @@ public class KeycloakUserImportService {
             boolean active
     ) {}
 
-    public record SyncResult(int created, int updated) {}
+    public record SyncResult(int created, int updated, int skippedConflicts) {}
 }

@@ -2,9 +2,11 @@ package com.bricklayers.chatservice.config;
 
 import com.bricklayers.chatservice.entity.ParticipantRole;
 import com.bricklayers.chatservice.security.ChatPrincipal;
+import com.bricklayers.chatservice.security.ChatIdentityService;
 import com.bricklayers.chatservice.security.UserContext;
 import com.bricklayers.chatservice.service.ChatAccessService;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
@@ -15,6 +17,9 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -23,7 +28,6 @@ import org.springframework.http.HttpStatus;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.List;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -31,6 +35,8 @@ import java.util.List;
 public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final ChatAccessService accessService;
+    private final ChatIdentityService identityService;
+    private final JwtDecoder jwtDecoder;
 
     @Value("${chat.demo.enabled:false}")
     private boolean demoEnabled;
@@ -51,17 +57,18 @@ public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {
             @Override
-            public Message<?> preSend(Message<?> message, MessageChannel channel) {
+            public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
                 if (accessor == null) {
                     return message;
                 }
 
                 if (accessor.getCommand() == StompCommand.CONNECT) {
-                    if (!demoEnabled) {
-                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chat demo identity headers are disabled");
+                    if (demoEnabled && accessor.getFirstNativeHeader("x-user-id") != null) {
+                        accessor.setUser(new ChatPrincipal(readDemoUser(accessor)));
+                    } else {
+                        accessor.setUser(new ChatPrincipal(authenticatedUser(accessor)));
                     }
-                    accessor.setUser(new ChatPrincipal(readUser(accessor)));
                 } else if (accessor.getCommand() == StompCommand.SUBSCRIBE) {
                     ChatPrincipal principal = requirePrincipal(accessor);
                     authorizeDestination(accessor.getDestination(), principal.user());
@@ -92,7 +99,20 @@ public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Connect before using chat");
     }
 
-    private static UserContext readUser(StompHeaderAccessor accessor) {
+    private UserContext authenticatedUser(StompHeaderAccessor accessor) {
+        String authorization = accessor.getFirstNativeHeader("Authorization");
+        if (authorization == null || !authorization.regionMatches(true, 0, "Bearer ", 0, 7)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "A Keycloak bearer token is required");
+        }
+        try {
+            Jwt jwt = jwtDecoder.decode(authorization.substring(7).trim());
+            return identityService.resolve(jwt);
+        } catch (JwtException exception) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid Keycloak bearer token", exception);
+        }
+    }
+
+    private static UserContext readDemoUser(StompHeaderAccessor accessor) {
         try {
             return new UserContext(
                     requiredHeader(accessor, "x-user-id"),

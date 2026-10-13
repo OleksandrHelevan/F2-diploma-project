@@ -19,16 +19,37 @@ spring:
 
   thymeleaf:
     cache: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${keycloak.issuer-uri}
+          jwk-set-uri: ${keycloak.jwk-set-uri}
 
 server:
   port: ${SERVER_PORT:8081}
 
-local-auth:
-  jwt:
-    secret: ${JWT_SECRET:}
-    issuer: ${JWT_ISSUER:bricklayers-user-service}
-  bootstrap-superadmin-username: ${LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_USERNAME:superadmin}
-  bootstrap-superadmin-password: ${LOCAL_AUTH_BOOTSTRAP_SUPERADMIN_PASSWORD:}
+keycloak:
+  base-url: ${KEYCLOAK_BASE_URL:http://localhost:8084}
+  issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8084/realms/bricklayers}
+  jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8084/realms/bricklayers/protocol/openid-connect/certs}
+  realm: ${KEYCLOAK_REALM:bricklayers}
+  admin:
+    base-url: ${KEYCLOAK_ADMIN_BASE_URL:${KEYCLOAK_BASE_URL:http://localhost:8084}}
+    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:user-sync-service}
+    client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:user-sync-service-secret}
+  sync:
+    enabled: ${KEYCLOAK_SYNC_ENABLED:false}
+    default-role: ${KEYCLOAK_SYNC_DEFAULT_ROLE:BUILDER}
+    initial-delay-ms: ${KEYCLOAK_SYNC_INITIAL_DELAY_MS:10000}
+    fixed-delay-ms: ${KEYCLOAK_SYNC_FIXED_DELAY_MS:60000}
+
 logging:
   level:
     org.springframework.security: DEBUG
+
+springdoc:
+  swagger-ui:
+    oauth:
+      client-id: bricklayers-web-app
+      use-pkce-with-authorization-code-grant: true

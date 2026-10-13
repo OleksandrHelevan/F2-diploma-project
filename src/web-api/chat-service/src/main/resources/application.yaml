@@ -4,13 +4,37 @@ spring:
   mongodb:
     uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/chat_db}
     database: ${SPRING_DATA_MONGODB_NAME:chat_db}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8084/realms/bricklayers}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8084/realms/bricklayers/protocol/openid-connect/certs}
 
 server:
   port: ${SERVER_PORT:8083}
 
 user-service:
-  url: ${USER_SERVICE_URL:http://localhost:8080}
+  url: ${USER_SERVICE_URL:http://localhost:8081}
+
+keycloak:
+  issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8084/realms/bricklayers}
+  jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8084/realms/bricklayers/protocol/openid-connect/certs}
 
 chat:
   demo:
     enabled: ${CHAT_DEMO_ENABLED:false}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    oauth:
+      client-id: bricklayers-web-app
+      use-pkce-with-authorization-code-grant: true
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json

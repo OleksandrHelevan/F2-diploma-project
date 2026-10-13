@@ -1,6 +1,9 @@
 package com.bricklayers.userservice.security;
 
 import com.bricklayers.userservice.annotation.CurrentUserId;
+import com.bricklayers.userservice.repository.UserRepository;
+import com.bricklayers.userservice.exception.UserNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
@@ -13,7 +16,6 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-import java.util.Objects;
 import java.util.UUID;
 
 /*
@@ -25,7 +27,10 @@ import java.util.UUID;
 */
 
 @Component
+@RequiredArgsConstructor
 public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResolver {
+
+    private final UserRepository userRepository;
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
@@ -42,11 +47,10 @@ public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResol
         if (!(auth instanceof JwtAuthenticationToken jwtAuthentication)) {
             throw new AuthenticationCredentialsNotFoundException("Користувач не автентифікований");
         }
-        try {
-            return UUID.fromString(Objects.requireNonNull(jwtAuthentication.getToken().getSubject()));
-        } catch (IllegalArgumentException exception) {
-            throw new AuthenticationCredentialsNotFoundException(
-                    "JWT subject is not a local user ID", exception);
-        }
+        String keycloakId = jwtAuthentication.getToken().getSubject();
+        return userRepository.findByKeycloakId(keycloakId)
+                .map(user -> user.getId())
+                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException(
+                        "Authenticated Keycloak user is not linked to a local profile"));
     }
 }

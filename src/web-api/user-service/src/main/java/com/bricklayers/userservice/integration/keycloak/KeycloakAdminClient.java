@@ -3,7 +3,6 @@ package com.bricklayers.userservice.integration.keycloak;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -14,9 +13,10 @@ import org.springframework.web.client.RestClient;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Component
-@ConditionalOnProperty(name = "keycloak.sync.enabled", havingValue = "true")
 public class KeycloakAdminClient {
 
     private static final ParameterizedTypeReference<List<KeycloakUser>> USERS_TYPE = new ParameterizedTypeReference<>() {};
@@ -31,8 +31,8 @@ public class KeycloakAdminClient {
     public KeycloakAdminClient(
             @Value("${keycloak.admin.base-url}") String adminBaseUrl,
             @Value("${keycloak.realm}") String realm,
-            @Value("${keycloak.sync.client-id}") String clientId,
-            @Value("${keycloak.sync.client-secret}") String clientSecret
+            @Value("${keycloak.admin.client-id}") String clientId,
+            @Value("${keycloak.admin.client-secret}") String clientSecret
     ) {
         this.restClient = RestClient.builder().build();
         this.adminBaseUrl = adminBaseUrl.replaceAll("/+$", "");
@@ -92,6 +92,22 @@ public class KeycloakAdminClient {
                              String firstName,
                              String lastName,
                              String accessToken) {
+        return createUser(username, email, password, firstName, lastName, null, accessToken);
+    }
+
+    public String createUser(String username,
+                             String email,
+                             String password,
+                             String firstName,
+                             String lastName,
+                             UUID companyId,
+                             String accessToken) {
+        List<KeycloakCredential> credentials = password == null || password.isBlank()
+                ? List.of()
+                : List.of(new KeycloakCredential("password", password, false));
+        Map<String, List<String>> attributes = companyId == null
+                ? Map.of()
+                : Map.of("companyId", List.of(companyId.toString()));
         KeycloakUserRepresentation user = new KeycloakUserRepresentation(
                 username,
                 email,
@@ -99,7 +115,8 @@ public class KeycloakAdminClient {
                 lastName,
                 true,
                 false,
-                List.of(new KeycloakCredential("password", password, false)));
+                credentials,
+                attributes);
         URI location = restClient.post()
                 .uri(endpoint("admin", "realms", realm, "users"))
                 .headers(headers -> headers.setBearerAuth(accessToken))
@@ -118,6 +135,16 @@ public class KeycloakAdminClient {
             throw new IllegalStateException("Keycloak returned an invalid created user's location");
         }
         return userId;
+    }
+
+    public void updateUser(String userId, KeycloakUserRepresentation user, String accessToken) {
+        restClient.put()
+                .uri(endpoint("admin", "realms", realm, "users", userId))
+                .headers(headers -> headers.setBearerAuth(accessToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(user)
+                .retrieve()
+                .toBodilessEntity();
     }
 
     public KeycloakRealmRole getRealmRole(String roleName, String accessToken) {
@@ -142,10 +169,30 @@ public class KeycloakAdminClient {
                 .toBodilessEntity();
     }
 
+    public void removeRealmRole(String userId, KeycloakRole role, String accessToken) {
+        restClient.method(org.springframework.http.HttpMethod.DELETE)
+                .uri(endpoint("admin", "realms", realm, "users", userId, "role-mappings", "realm"))
+                .headers(headers -> headers.setBearerAuth(accessToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(List.of(role))
+                .retrieve()
+                .toBodilessEntity();
+    }
+
     public void deleteUser(String userId, String accessToken) {
         restClient.delete()
                 .uri(endpoint("admin", "realms", realm, "users", userId))
                 .headers(headers -> headers.setBearerAuth(accessToken))
+                .retrieve()
+                .toBodilessEntity();
+    }
+
+    public void updatePassword(String userId, String password, String accessToken) {
+        restClient.put()
+                .uri(endpoint("admin", "realms", realm, "users", userId, "reset-password"))
+                .headers(headers -> headers.setBearerAuth(accessToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new KeycloakCredential("password", password, false))
                 .retrieve()
                 .toBodilessEntity();
     }
@@ -173,16 +220,17 @@ public class KeycloakAdminClient {
     ) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record KeycloakRole(String name) {}
+    public record KeycloakRole(String id, String name) {}
 
     public record KeycloakUserRepresentation(
             String username,
             String email,
             String firstName,
             String lastName,
-            boolean enabled,
-            boolean emailVerified,
-            List<KeycloakCredential> credentials
+            Boolean enabled,
+            Boolean emailVerified,
+            List<KeycloakCredential> credentials,
+            Map<String, List<String>> attributes
     ) {}
 
     public record KeycloakCredential(String type, String value, boolean temporary) {}
