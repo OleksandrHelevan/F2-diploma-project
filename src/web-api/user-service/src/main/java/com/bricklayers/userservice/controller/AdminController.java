@@ -1,34 +1,38 @@
 package com.bricklayers.userservice.controller;
 
+import com.bricklayers.userservice.annotation.SuperAdminDelete;
+import com.bricklayers.userservice.dto.CreateUserRequest;
 import com.bricklayers.userservice.dto.SetPasswordRequest;
+import com.bricklayers.userservice.dto.UpdateUserRequest;
+import com.bricklayers.userservice.dto.UserDto;
 import com.bricklayers.userservice.exception.UserNotFoundException;
 import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient;
 import com.bricklayers.userservice.repository.UserRepository;
+import com.bricklayers.userservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/v1/admin/users")
 @SecurityRequirement(name = "keycloak", scopes = {"openid", "profile", "email"})
 @RequiredArgsConstructor
 public class AdminController {
 
+    private final UserService userService;
     private final UserRepository userRepository;
-    private final KeycloakAdminClient keycloakAdminClient;
 
     @GetMapping("/stats")
     public Map<String, Object> stats() {
@@ -38,17 +42,35 @@ public class AdminController {
         );
     }
 
-    @PutMapping("/users/{userId}/password")
+    @PostMapping
     @PreAuthorize("hasRole('SUPERADMIN')")
-    public void setPassword(@PathVariable UUID userId,
-                            @Valid @RequestBody SetPasswordRequest request) {
-        var user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("user.not.found", userId));
-        if (user.getKeycloakId() == null || user.getKeycloakId().isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Користувача не пов'язано з обліковим записом Keycloak");
-        }
-        String accessToken = keycloakAdminClient.getAccessToken();
-        keycloakAdminClient.updatePassword(user.getKeycloakId(), request.password(), accessToken);
+    public ResponseEntity<UserDto> create(@Valid @RequestBody CreateUserRequest request) {
+        UserDto created = userService.create(request);
+        return ResponseEntity.created(URI.create("/api/v1/users/" + created.id())).body(created);
     }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    public ResponseEntity<UserDto> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(userService.getById(id));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    public ResponseEntity<Page<UserDto>> getUsers(@RequestParam int page, @RequestParam int size) {
+        return ResponseEntity.ok(userService.getUsers(page, size));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    public ResponseEntity<UserDto> update(@PathVariable UUID id,
+                                          @Valid @RequestBody UpdateUserRequest request) {
+        return ResponseEntity.ok(userService.update(id, request));
+    }
+
+    @SuperAdminDelete("/{id}")
+    public void delete(@PathVariable UUID id) {
+        userService.delete(id);
+    }
+
 }

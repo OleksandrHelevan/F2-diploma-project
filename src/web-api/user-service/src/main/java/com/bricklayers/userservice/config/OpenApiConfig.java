@@ -1,5 +1,6 @@
 package com.bricklayers.userservice.config;
 
+import com.bricklayers.userservice.annotation.CurrentUserId;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -8,6 +9,7 @@ import io.swagger.v3.oas.models.security.OAuthFlows;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.Scopes;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +18,11 @@ import java.util.List;
 
 @Configuration
 public class OpenApiConfig {
+
+    static {
+        // @CurrentUserId is resolved from the JWT, not sent by the client
+        SpringDocUtils.getConfig().addAnnotationsToIgnore(CurrentUserId.class);
+    }
 
     @Bean
     OpenAPI userServiceOpenApi(@Value("${keycloak.issuer-uri}") String issuerUri) {

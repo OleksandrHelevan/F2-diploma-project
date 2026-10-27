@@ -5,5 +5,6 @@ public enum Role {
     CUSTOMER,
     FOREMAN,
     BUILDER,
-    SUPPLIER
+    SUPPLIER,
+    COMPANY
 }

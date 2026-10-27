@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-create-admin-audit-log-table
+      author: bricklayers
+      changes:
+        - createTable:
+            tableName: admin_audit_log
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: action
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: actor
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target
+                  type: VARCHAR(255)
+              - column:
+                  name: outcome
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reason
+                  type: VARCHAR(255)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: admin_audit_log
+            indexName: idx_admin_audit_log_created_at
+            columns:
+              - column:
+                  name: created_at

@@ -1,22 +1,22 @@
 package com.bricklayers.userservice.controller;
 
-import com.bricklayers.userservice.dto.SetPasswordRequest;
+import com.bricklayers.userservice.dto.CreateUserRequest;
+import com.bricklayers.userservice.dto.UpdateUserRequest;
+import com.bricklayers.userservice.dto.UserDto;
 import com.bricklayers.userservice.entity.Role;
-import com.bricklayers.userservice.entity.User;
-import com.bricklayers.userservice.exception.UserNotFoundException;
-import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient;
 import com.bricklayers.userservice.repository.UserRepository;
+import com.bricklayers.userservice.service.UserService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,10 +27,30 @@ class AdminControllerTest {
     private UserRepository userRepository;
 
     @Mock
-    private KeycloakAdminClient keycloakAdminClient;
+    private UserService userService;
+
 
     @InjectMocks
     private AdminController adminController;
+
+    private UUID userId;
+    private UserDto userDto;
+
+    @BeforeEach
+    void setUp() {
+        userId = UUID.randomUUID();
+        userDto = new UserDto(
+                userId,
+                "builder",
+                "builder@example.com",
+                "Ivan",
+                "Builder",
+                Role.BUILDER,
+                null,
+                true,
+                null,
+                null);
+    }
 
     @Test
     void stats_returnsUserCountAndAdminMessage() {
@@ -43,33 +63,50 @@ class AdminControllerTest {
         verify(userRepository).count();
     }
 
+
     @Test
-    void setPasswordUpdatesKeycloakAccount() {
-        UUID userId = UUID.randomUUID();
-        User user = User.builder()
-                .id(userId)
-                .keycloakId("keycloak-user-id")
-                .username("builder")
-                .email("builder@example.com")
-                .role(Role.BUILDER)
-                .active(true)
-                .build();
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(keycloakAdminClient.getAccessToken()).thenReturn("service-token");
+    void create_returnsCreatedUserAndLocation() {
+        CreateUserRequest request = new CreateUserRequest(
+                "builder", "builder@example.com", "Ivan", "Builder", Role.BUILDER, null);
+        when(userService.create(request)).thenReturn(userDto);
 
-        adminController.setPassword(userId, new SetPasswordRequest("new-password-123"));
+        var response = adminController.create(request);
 
-        verify(keycloakAdminClient).updatePassword(
-                "keycloak-user-id", "new-password-123", "service-token");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getHeaders().getLocation()).hasToString("/api/v1/users/" + userId);
+        assertThat(response.getBody()).isEqualTo(userDto);
+        verify(userService).create(request);
     }
 
     @Test
-    void setPasswordUnknownUserReturnsNotFound() {
-        UUID userId = UUID.randomUUID();
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+    void getById_returnsUser() {
+        when(userService.getById(userId)).thenReturn(userDto);
 
-        assertThatThrownBy(() -> adminController.setPassword(
-                userId, new SetPasswordRequest("new-password-123")))
-                .isInstanceOf(UserNotFoundException.class);
+        var response = adminController.getById(userId);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(userDto);
+        verify(userService).getById(userId);
     }
+
+    @Test
+    void update_returnsUpdatedUser() {
+        UpdateUserRequest request = new UpdateUserRequest(
+                "Ivan", "Builder", "updated@example.com", Role.BUILDER, null, true);
+        when(userService.update(userId, request)).thenReturn(userDto);
+
+        var response = adminController.update(userId, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(userDto);
+        verify(userService).update(userId, request);
+    }
+
+    @Test
+    void delete_delegatesToService() {
+        adminController.delete(userId);
+
+        verify(userService).delete(userId);
+    }
+
 }

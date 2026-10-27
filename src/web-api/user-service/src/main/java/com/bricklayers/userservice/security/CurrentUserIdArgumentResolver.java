@@ -1,6 +1,7 @@
 package com.bricklayers.userservice.security;
 
 import com.bricklayers.userservice.annotation.CurrentUserId;
+import com.bricklayers.userservice.entity.User;
 import com.bricklayers.userservice.repository.UserRepository;
 import com.bricklayers.userservice.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +50,7 @@ public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResol
         }
         String keycloakId = jwtAuthentication.getToken().getSubject();
         return userRepository.findByKeycloakId(keycloakId)
-                .map(user -> user.getId())
+                .map(User::getId)
                 .orElseThrow(() -> new AuthenticationCredentialsNotFoundException(
                         "Authenticated Keycloak user is not linked to a local profile"));
     }

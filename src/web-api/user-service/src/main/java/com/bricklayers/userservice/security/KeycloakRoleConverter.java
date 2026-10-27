@@ -24,6 +24,7 @@ public final class KeycloakRoleConverter {
         Set<GrantedAuthority> roles = new LinkedHashSet<>(fromRealmAccessClaim(
                 authority.getIdToken().getClaim("realm_access")));
         if (roles.isEmpty()) {
+            assert authority.getUserInfo() != null;
             roles.addAll(fromRealmAccessClaim(authority.getUserInfo().getClaim("realm_access")));
         }
         return roles;

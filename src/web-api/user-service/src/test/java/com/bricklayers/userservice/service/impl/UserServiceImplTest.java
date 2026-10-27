@@ -11,7 +11,6 @@ import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient;
 import com.bricklayers.userservice.mapper.UserMapper;
 import com.bricklayers.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -160,39 +159,6 @@ class UserServiceImplTest {
         assertThat(userService.getByKeycloakId("keycloak-user-id")).isEqualTo(userDto);
     }
 
-    @Test
-    void getAll_usersExist_returnsMappedDtos() {
-        User secondUser = User.builder()
-                .id(UUID.randomUUID())
-                .username("foreman")
-                .email("foreman@example.com")
-                .role(Role.FOREMAN)
-                .active(true)
-                .build();
-        UserDto secondDto = new UserDto(
-                secondUser.getId(), "foreman", "foreman@example.com", null, null,
-                Role.FOREMAN, null, true, null, null);
-        when(userRepository.findAll()).thenReturn(List.of(user, secondUser));
-        when(userMapper.toDto(user)).thenReturn(userDto);
-        when(userMapper.toDto(secondUser)).thenReturn(secondDto);
-
-        List<UserDto> result = userService.getAll();
-
-        assertThat(result).containsExactly(userDto, secondDto);
-        verify(userRepository).findAll();
-        verify(userMapper).toDto(user);
-        verify(userMapper).toDto(secondUser);
-    }
-
-    @Test
-    void getAll_noUsers_returnsEmptyList() {
-        when(userRepository.findAll()).thenReturn(List.of());
-
-        List<UserDto> result = userService.getAll();
-
-        assertThat(result).isEmpty();
-        verify(userRepository).findAll();
-    }
 
     @Test
     void update_changedEmail_savesUpdatedEntityAndReturnsDto() {

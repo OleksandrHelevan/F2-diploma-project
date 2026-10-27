@@ -1,6 +1,6 @@
 package com.bricklayers.userservice.exception;
 
-import com.bricklayers.userservice.controller.UserController;
+import com.bricklayers.userservice.controller.AdminController;
 import com.bricklayers.userservice.dto.CreateUserRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +51,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleUserAlreadyExists_returnsConflictResponse() {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/users");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/admin/users");
 
         ResponseEntity<ErrorResponse> response = handler.handleUserAlreadyExists(
                 new UserAlreadyExistsException("user.already.exists.email", "builder@example.com"), request);
@@ -75,10 +75,10 @@ class GlobalExceptionHandlerTest {
         bindingResult.addError(new FieldError("request", "username", "Username must not be blank"));
         bindingResult.addError(new FieldError("request", "email", "Invalid email format"));
 
-        Method method = UserController.class.getDeclaredMethod("create", CreateUserRequest.class);
+        Method method = AdminController.class.getDeclaredMethod("create", CreateUserRequest.class);
         MethodArgumentNotValidException ex = new MethodArgumentNotValidException(
                 new org.springframework.core.MethodParameter(method, 0), bindingResult);
-        MockHttpServletRequest httpRequest = new MockHttpServletRequest("POST", "/api/v1/users");
+        MockHttpServletRequest httpRequest = new MockHttpServletRequest("POST", "/api/v1/admin/users");
 
         ResponseEntity<ErrorResponse> response = handler.handleValidation(ex, httpRequest);
 

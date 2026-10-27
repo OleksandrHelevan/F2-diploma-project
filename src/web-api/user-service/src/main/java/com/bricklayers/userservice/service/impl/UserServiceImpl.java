@@ -1,6 +1,10 @@
 package com.bricklayers.userservice.service.impl;
 
+import com.bricklayers.userservice.annotation.AuditAdminAction;
+import com.bricklayers.userservice.annotation.ForbidSelfTarget;
+import com.bricklayers.userservice.annotation.RequireKeycloakLink;
 import com.bricklayers.userservice.dto.CreateUserRequest;
+import com.bricklayers.userservice.dto.SetPasswordRequest;
 import com.bricklayers.userservice.dto.UpdateUserRequest;
 import com.bricklayers.userservice.dto.UserDto;
 import com.bricklayers.userservice.entity.Role;
@@ -15,11 +19,12 @@ import com.bricklayers.userservice.mapper.UserMapper;
 import com.bricklayers.userservice.repository.UserRepository;
 import com.bricklayers.userservice.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -35,6 +40,7 @@ public class UserServiceImpl implements UserService {
     private final KeycloakAdminClient keycloakAdminClient;
 
     @Override
+    @AuditAdminAction("USER_CREATE")
     public UserDto create(CreateUserRequest request) {
         if (userRepository.existsByUsername(request.username())) {
             throw new UserAlreadyExistsException(
@@ -92,16 +98,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserDto> getAll() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toDto)
-                .toList();
+    public Page<UserDto> getUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        return userRepository
+                .findAll(pageable)
+                .map(userMapper::toDto);
     }
 
     @Override
+    @AuditAdminAction("USER_UPDATE")
+    @RequireKeycloakLink
     public UserDto update(UUID id, UpdateUserRequest request) {
         User user = findUserOrThrow(id);
-        requireKeycloakLink(user);
 
         boolean emailChanged = request.email() != null && !request.email().equals(user.getEmail());
         if (emailChanged && userRepository.existsByEmail(request.email())) {
@@ -137,12 +146,35 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @AuditAdminAction("USER_DELETE")
+    @ForbidSelfTarget(message = "Administrators cannot delete their own account")
     public void delete(UUID id) {
         User user = findUserOrThrow(id);
         if (user.getKeycloakId() != null && !user.getKeycloakId().isBlank()) {
             keycloakAdminClient.deleteUser(user.getKeycloakId(), keycloakAdminClient.getAccessToken());
         }
         userRepository.delete(user);
+    }
+
+    /**
+     * Lab 4 (AOP), deliberate self-invocation: {@code this.delete(id)} bypasses the Spring proxy,
+     * so neither {@link ForbidSelfTarget} nor {@link AuditAdminAction} on {@link #delete(UUID)} runs
+     * here. An administrator can delete their own account through this path, and no audit record
+     * is written, without any error. Calling {@code delete(id)} on the injected bean is guarded.
+     */
+    @Override
+    public void deleteAll(List<UUID> ids) {
+        ids.forEach(this::delete);
+    }
+
+    @Override
+    @AuditAdminAction("USER_PASSWORD_RESET")
+    @RequireKeycloakLink
+    public void setPassword(UUID userId, SetPasswordRequest request){
+        var user = findUserOrThrow(userId);
+        String accessToken = keycloakAdminClient.getAccessToken();
+        keycloakAdminClient.updatePassword(user.getKeycloakId(), request.password(), accessToken);
+
     }
 
     private User findUserOrThrow(UUID id) {
@@ -163,13 +195,6 @@ public class UserServiceImpl implements UserService {
                 : Map.of("companyId", List.of(companyId.toString()));
         return new KeycloakUserRepresentation(
                 username, email, firstName, lastName, enabled, null, null, attributes);
-    }
-
-    private static void requireKeycloakLink(User user) {
-        if (user.getKeycloakId() == null || user.getKeycloakId().isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "User profile is not linked to a Keycloak account");
-        }
     }
 
     private void deleteKeycloakUserAfterFailure(String keycloakId, String accessToken, RuntimeException failure) {
