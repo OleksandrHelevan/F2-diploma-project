@@ -1,34 +1,18 @@
-### GET All products Happy Path
+### 1. GET All products
 GET http://localhost:8082/api/v1/products
 Authorization: Basic oleksandr oleksandr
 Accept: application/json
-###
 
-### GET All products Bad credentials
-GET http://localhost:8082/api/v1/products
-Authorization: Basic oleksandr oleksandr1
-Accept: application/json
-###
+> {%
+    client.test("GET all -> 200", () => client.assert(response.status === 200, "status " + response.status));
+%}
 
-### GET One product Happy Path
-GET http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
-Authorization: Basic oleksandr oleksandr
-Accept: application/json
-###
-
-### GET One product Bad credentials
-GET http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
-Authorization: Basic oleksandr oleksandr
-Accept: application/json
-###
-
-### CREATE One product Happy Path
+### 2. CREATE One product
 POST http://localhost:8082/api/v1/products
 Authorization: Basic oleksandr oleksandr
 Content-Type: application/json
 
 {
-  "id": "915db4bc-9bc6-439b-a769-a53a54eb5fc8",
   "supplierId": "49d81772-4eb3-466c-a257-0300c1e89de6",
   "name": "Цемент М500",
   "description": "Портландцемент М500, мішок 25 кг",
@@ -38,35 +22,32 @@ Content-Type: application/json
   "amount": 1000,
   "available": true
 }
-###
 
-### CREATE One product Bad credentials
-POST http://localhost:8082/api/v1/products
-Authorization: Basic oleksandr oleksandr1
-Content-Type: application/json
+> {%
+    client.test("CREATE -> 201", () => {
+        client.assert(response.status === 201, "status " + response.status);
+        client.assert(response.body.createdBy === "oleksandr", "createdBy " + response.body.createdBy);
+    });
+    client.global.set("productId", response.body.id);
+%}
 
-{
-  "id": "915db4bc-9bc6-439b-a769-a53a54eb5fc8",
-  "supplierId": "49d81772-4eb3-466c-a257-0300c1e89de6",
-  "name": "Цемент М500",
-  "description": "Портландцемент М500, мішок 25 кг",
-  "category": "Сипучі матеріали",
-  "unit": "мішок",
-  "price": 190.0,
-  "amount": 1000,
-  "available": true
-}
-###
+### 3. GET One product
+GET http://localhost:8082/api/v1/products/{{productId}}
+Authorization: Basic oleksandr oleksandr
+Accept: application/json
 
-### UPDATE One product Happy Path
-PUT http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
+> {%
+    client.test("GET one -> 200", () => client.assert(response.status === 200, "status " + response.status));
+%}
+
+### 4. UPDATE One product
+PUT http://localhost:8082/api/v1/products/{{productId}}
 Authorization: Basic oleksandr oleksandr
 Content-Type: application/json
 
 {
-  "id": "915db4bc-9bc6-439b-a769-a53a54eb5fc8",
   "supplierId": "49d81772-4eb3-466c-a257-0300c1e89de6",
-  "name": "Цемент М500",
+  "name": "Цемент М500 (оновлено)",
   "description": "Портландцемент М500, мішок 25 кг",
   "category": "Сипучі матеріали",
   "unit": "мішок",
@@ -74,34 +55,18 @@ Content-Type: application/json
   "amount": 700,
   "available": true
 }
-###
 
-### UPDATE One product Bad credentials
-PUT http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
-Authorization: Basic oleksandr oleksandr1
-Content-Type: application/json
+> {%
+    client.test("UPDATE -> 200", () => {
+        client.assert(response.status === 200, "status " + response.status);
+        client.assert(response.body.lastModifiedBy === "oleksandr", "lastModifiedBy " + response.body.lastModifiedBy);
+    });
+%}
 
-{
-  "id": "915db4bc-9bc6-439b-a769-a53a54eb5fc8",
-  "supplierId": "49d81772-4eb3-466c-a257-0300c1e89de6",
-  "name": "Цемент М500",
-  "description": "Портландцемент М500, мішок 25 кг",
-  "category": "Сипучі матеріали",
-  "unit": "мішок",
-  "price": 200.0,
-  "amount": 700,
-  "available": true
-}
-###
-
-### DELETE One product Bad credentials
-DELETE http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
-Authorization: Basic oleksandr oleksandr1
-Content-Type: application/json
-###
-
-### DELETE One product Happy Path
-DELETE http://localhost:8082/api/v1/products/bff69496-f769-4d73-80ac-13fc7565b8b2
+### 5. DELETE One product
+DELETE http://localhost:8082/api/v1/products/{{productId}}
 Authorization: Basic oleksandr oleksandr
-Content-Type: application/json
-###
+
+> {%
+    client.test("DELETE -> 204", () => client.assert(response.status === 204, "status " + response.status));
+%}

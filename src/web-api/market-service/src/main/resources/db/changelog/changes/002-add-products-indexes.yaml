@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-add-products-indexes
+      author: bricklayers
+      changes:
+        - createIndex:
+            tableName: products
+            indexName: idx_products_supplier_id
+            columns:
+              - column:
+                  name: supplier_id
+        - createIndex:
+            tableName: products
+            indexName: idx_products_category
+            columns:
+              - column:
+                  name: category
