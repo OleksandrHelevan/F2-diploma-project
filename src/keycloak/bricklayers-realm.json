@@ -53,6 +53,7 @@
       "defaultClientScopes": [
         "web-origins",
         "acr",
+        "basic",
         "profile",
         "roles",
         "email"
@@ -132,6 +133,7 @@
       "defaultClientScopes": [
         "web-origins",
         "acr",
+        "basic",
         "profile",
         "roles",
         "email"

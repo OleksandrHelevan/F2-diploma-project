@@ -1,7 +1,7 @@
 package com.bricklayers.chatservice.security;
 
 import com.bricklayers.chatservice.client.UserDirectory;
-import com.bricklayers.chatservice.client.UserInfo;
+import com.bricklayers.common.dto.UserInfo;
 import com.bricklayers.chatservice.entity.ParticipantRole;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

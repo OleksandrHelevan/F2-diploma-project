@@ -1,67 +1,70 @@
 package com.bricklayers.projectsservice.service.impl;
-/*
-  @author   oleksandrHelevan
-  @project   v
-  @class  ProductServiceImpl
-  @version  1.0.0
-  @since 20.09.2026 - 20.58
-*/
 
 import com.bricklayers.projectsservice.model.Product;
+import com.bricklayers.projectsservice.repository.ProductRepository;
 import com.bricklayers.projectsservice.service.ProductService;
+import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private final List<Product> products = new ArrayList<>(List.of(
-            new Product(UUID.randomUUID(), UUID.randomUUID(), "Цемент М400",
-                    "Портландцемент М400, мішок 50 кг", "Сипучі матеріали",
-                    "мішок", 210.0, 500, true
-            ),
-            new Product(UUID.randomUUID(), UUID.randomUUID(), "Цегла керамічна рядова",
-                    "Одинарна керамічна цегла М150", "Стінові матеріали",
-                    "шт", 12.5, 10000, true
-            ),
-            new Product(UUID.randomUUID(), UUID.randomUUID(), "Арматура А500С 12мм",
-                    "Арматурний прут періодичного профілю, довжина 12 м",
-                    "Металопрокат", "прут", 350.0, 800, true
-            ),
-            new Product(UUID.randomUUID(), UUID.randomUUID(), "Пісок будівельний",
-                    "Пісок кар'єрний, фракція 0-5 мм", "Сипучі матеріали",
-                    "м3", 450.0, 120, false
-            ),
-            new Product(UUID.randomUUID(), UUID.randomUUID(), "Гіпсокартон 12.5мм",
-                    "Гіпсокартонний лист стандартний, 1200x2500 мм",
-                    "Оздоблювальні матеріали", "лист", 185.0, 300, true
-            )
-    ));
+    private final ProductRepository productRepository;
+
+    @PostConstruct
+    void init() {
+        productRepository.deleteAll();
+
+        List.of(
+                new Product(null, UUID.randomUUID(), "Цемент М400",
+                        "Портландцемент М400, мішок 50 кг", "Сипучі матеріали",
+                        "мішок", 210.0, 500, true),
+                new Product(null, UUID.randomUUID(), "Цегла керамічна рядова",
+                        "Одинарна керамічна цегла М150", "Стінові матеріали",
+                        "шт", 12.5, 10000, true),
+                new Product(null, UUID.randomUUID(), "Арматура А500С 12мм",
+                        "Арматурний прут періодичного профілю, довжина 12 м",
+                        "Металопрокат", "прут", 350.0, 800, true),
+                new Product(null, UUID.randomUUID(), "Пісок будівельний",
+                        "Пісок кар'єрний, фракція 0-5 мм", "Сипучі матеріали",
+                        "м3", 450.0, 120, false),
+                new Product(null, UUID.randomUUID(), "Гіпсокартон 12.5мм",
+                        "Гіпсокартонний лист стандартний, 1200x2500 мм",
+                        "Оздоблювальні матеріали", "лист", 185.0, 300, true)
+        ).forEach(this::create);
+    }
 
     @Override
+    @Transactional
     public Product create(Product product) {
         product.setId(UUID.randomUUID());
-        products.add(product);
-        return product;
+        return productRepository.save(product);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Product getById(UUID id) {
-        return findByIdOrThrow(id);
+        return productRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Product with id " + id + " not found"));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Product> getAll() {
-        return new ArrayList<>(products);
+        return productRepository.findAll();
     }
 
     @Override
+    @Transactional
     public Product update(UUID id, Product product) {
-        Product existing = findByIdOrThrow(id);
+        Product existing = getById(id);
         existing.setSupplierId(product.getSupplierId());
         existing.setName(product.getName());
         existing.setDescription(product.getDescription());
@@ -70,12 +73,13 @@ public class ProductServiceImpl implements ProductService {
         existing.setPrice(product.getPrice());
         existing.setAmount(product.getAmount());
         existing.setAvailable(product.isAvailable());
-        return existing;
+        return productRepository.save(existing);
     }
 
     @Override
+    @Transactional
     public Product patch(UUID id, Product product) {
-        Product existing = findByIdOrThrow(id);
+        Product existing = getById(id);
 
         if (product.getName() != null && !product.getName().isBlank()) {
             existing.setName(product.getName());
@@ -97,20 +101,15 @@ public class ProductServiceImpl implements ProductService {
         }
         existing.setAvailable(product.isAvailable());
 
-        return existing;
+        return productRepository.save(existing);
     }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
-        Product existing = findByIdOrThrow(id);
-        products.remove(existing);
+        if (!productRepository.existsById(id)) {
+            throw new EntityNotFoundException("Product with id " + id + " not found");
+        }
+        productRepository.deleteById(id);
     }
-
-    private Product findByIdOrThrow(UUID id) {
-        return products.stream()
-                .filter(p -> p.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new NoSuchElementException("Product with id=" + id + " not found"));
-    }
-
 }

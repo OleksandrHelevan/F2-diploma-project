@@ -18,6 +18,23 @@ services:
       timeout: ${DB_HEALTHCHECK_TIMEOUT:-5s}
       retries: ${DB_HEALTHCHECK_RETRIES:-10}
 
+  market-db:
+    image: postgres:${POSTGRES_VERSION:-16-alpine}
+    container_name: bricklayers-market-db
+    environment:
+      POSTGRES_DB: market_db
+      POSTGRES_USER: market
+      POSTGRES_PASSWORD: market
+    ports:
+      - "5434:5432"
+    volumes:
+      - market_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U market -d market_db" ]
+      interval: ${DB_HEALTHCHECK_INTERVAL:-5s}
+      timeout: ${DB_HEALTHCHECK_TIMEOUT:-5s}
+      retries: ${DB_HEALTHCHECK_RETRIES:-10}
+
   keycloak:
     image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-25.0}
     container_name: ${KEYCLOAK_CONTAINER_NAME:-bricklayers-keycloak}
@@ -37,8 +54,8 @@ services:
       - ./keycloak/themes:/opt/keycloak/themes:ro
   user-service:
     build:
-      context: ./web-api/user-service
-      dockerfile: Dockerfile
+      context: ./web-api
+      dockerfile: user-service/Dockerfile
     container_name: ${USER_SERVICE_CONTAINER_NAME:-bricklayers-user-service}
     depends_on:
       postgres-users:
@@ -74,8 +91,8 @@ services:
 
   project-service:
     build:
-      context: ./web-api/market-service
-      dockerfile: Dockerfile
+      context: ./web-api
+      dockerfile: market-service/Dockerfile
     container_name: ${PROJECT_SERVICE_CONTAINER_NAME:-bricklayers-project-service}
     environment:
       SERVER_PORT: ${PROJECT_SERVICE_INTERNAL_PORT:-8082}
@@ -84,8 +101,8 @@ services:
 
   chat-service:
     build:
-      context: ./web-api/chat-service
-      dockerfile: Dockerfile
+      context: ./web-api
+      dockerfile: chat-service/Dockerfile
     container_name: ${CHAT_SERVICE_CONTAINER_NAME:-bricklayers-chat-service}
     depends_on:
       user-service:
@@ -121,3 +138,5 @@ services:
 volumes:
   users_db_data:
     name: ${USERS_DB_VOLUME:-users_db_data}
+  market_db_data:
+    name: market_db_data

@@ -8,6 +8,7 @@ package com.bricklayers.chatservice.client;
   @since 06.10.2026 - 22.10
 */
 
+import com.bricklayers.common.dto.UserInfo;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

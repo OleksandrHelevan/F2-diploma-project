@@ -1,11 +1,18 @@
+# Build context: src/web-api (the multi-module root)
+# ---- Build stage ----
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
+# The reactor needs every module's pom, even when building only one service
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+COPY common/pom.xml common/
+COPY user-service/pom.xml user-service/
+COPY market-service/pom.xml market-service/
+COPY chat-service/pom.xml chat-service/
 
-COPY src ./src
-RUN mvn clean package -DskipTests -B
+COPY common/src common/src
+COPY chat-service/src chat-service/src
+RUN --mount=type=cache,target=/root/.m2 mvn -B -pl chat-service -am clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
@@ -13,7 +20,7 @@ WORKDIR /app
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/chat-service/target/chat-service-*.jar app.jar
 
 EXPOSE 8083
 

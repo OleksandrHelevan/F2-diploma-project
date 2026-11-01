@@ -9,7 +9,7 @@ package com.bricklayers.chatservice.service;
 */
 
 import com.bricklayers.chatservice.client.UserDirectory;
-import com.bricklayers.chatservice.client.UserInfo;
+import com.bricklayers.common.dto.UserInfo;
 import com.bricklayers.chatservice.dto.CreateDirectChatRequest;
 import com.bricklayers.chatservice.dto.ChatResponse;
 import com.bricklayers.chatservice.entity.*;

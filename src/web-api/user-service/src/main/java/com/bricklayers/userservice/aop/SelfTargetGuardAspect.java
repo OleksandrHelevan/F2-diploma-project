@@ -16,11 +16,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Prevents an administrator from applying a destructive action to their own account
- * (e.g. deleting themselves and locking everyone out of the admin panel).
- * Calls without an authenticated JWT (scheduler, internal jobs) are not restricted.
- */
 @Aspect
 @Component
 @Order(SelfTargetGuardAspect.ORDER)

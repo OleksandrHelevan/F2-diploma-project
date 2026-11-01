@@ -19,11 +19,6 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Audit trail for administrative actions. Runs outermost so that rejections made by
- * the guard aspects are recorded as failures too. Every record is written to the AUDIT log
- * and stored in {@code admin_audit_log}; a storage failure never changes the action's outcome.
- */
 @Aspect
 @Component
 @Order(AdminAuditAspect.ORDER)

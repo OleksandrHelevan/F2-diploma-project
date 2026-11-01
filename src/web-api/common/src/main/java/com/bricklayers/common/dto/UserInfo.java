@@ -1,4 +1,4 @@
-package com.bricklayers.chatservice.client;
+package com.bricklayers.common.dto;
 
 /*
   @author   user
