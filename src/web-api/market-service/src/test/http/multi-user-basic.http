@@ -63,38 +63,37 @@ GET http://localhost:8082/api/v1/roles/all
 Authorization: Basic supplier supplier
 Accept: application/json
 
-### Get for admin - foreman (403)
+### Get for admin - foreman (asserts 403)
 GET http://localhost:8082/api/v1/roles/superadmin
 Authorization: Basic foreman foreman
 Accept: application/json
 
-
-### Get for admin - builder (403)
+### Get for admin - builder (asserts 403)
 GET http://localhost:8082/api/v1/roles/superadmin
 Authorization: Basic builder builder
 Accept: application/json
 
-### Get for admin - customer (403)
+### Get for admin - customer (asserts 403)
 GET http://localhost:8082/api/v1/roles/superadmin
 Authorization: Basic customer customer
 Accept: application/json
 
-### Get for admin - supplier (403)
+### Get for admin - supplier (asserts 403)
 GET http://localhost:8082/api/v1/roles/superadmin
 Authorization: Basic supplier supplier
 Accept: application/json
 
-### Get for foreman - builder (403)
+### Get for foreman - builder (asserts 403)
 GET http://localhost:8082/api/v1/roles/foreman
 Authorization: Basic builder builder
 Accept: application/json
 
-### Get for foreman - supplier (403)
+### Get for foreman - supplier (asserts 403)
 GET http://localhost:8082/api/v1/roles/foreman
 Authorization: Basic supplier supplier
 Accept: application/json
 
-### Get for foreman - customer (403)
+### Get for foreman - customer (asserts 403)
 GET http://localhost:8082/api/v1/roles/foreman
 Authorization: Basic customer customer
 Accept: application/json
