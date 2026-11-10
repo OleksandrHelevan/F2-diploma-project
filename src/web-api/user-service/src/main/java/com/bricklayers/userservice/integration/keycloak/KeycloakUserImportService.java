@@ -1,5 +1,6 @@
 package com.bricklayers.userservice.integration.keycloak;
 
+import com.bricklayers.userservice.cache.UserProfileCache;
 import com.bricklayers.userservice.entity.Role;
 import com.bricklayers.userservice.entity.User;
 import com.bricklayers.userservice.repository.UserRepository;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,6 +22,7 @@ import java.util.UUID;
 public class KeycloakUserImportService {
 
     private final UserRepository userRepository;
+    private final UserProfileCache profileCache;
 
     @Transactional
     public SyncResult synchronize(List<KeycloakUserRecord> remoteUsers) {
@@ -37,14 +40,18 @@ public class KeycloakUserImportService {
                         + "(keycloakId={}): {}", remote.keycloakId(), exception.getMessage());
                 continue;
             }
-            if (user == null) {
+            boolean existing = user != null;
+            if (!existing) {
                 user = new User();
-                user.setKeycloakId(remote.keycloakId());
                 created++;
+            } else if (matches(user, remote)) {
+
+                continue;
             } else {
                 updated++;
-                user.setKeycloakId(remote.keycloakId());
             }
+
+            user.setKeycloakId(remote.keycloakId());
 
             user.setUsername(remote.username());
             user.setEmail(remote.email());
@@ -54,9 +61,23 @@ public class KeycloakUserImportService {
             user.setActive(remote.active());
             user.setCompanyId(remote.companyId());
             userRepository.save(user);
+            if (existing) {
+                profileCache.evict(user.getId(), remote.keycloakId());
+            }
         }
 
         return new SyncResult(created, updated, skippedConflicts);
+    }
+
+    private static boolean matches(User user, KeycloakUserRecord remote) {
+        return Objects.equals(user.getKeycloakId(), remote.keycloakId())
+                && Objects.equals(user.getUsername(), remote.username())
+                && Objects.equals(user.getEmail(), remote.email())
+                && Objects.equals(user.getFirstName(), remote.firstName())
+                && Objects.equals(user.getLastName(), remote.lastName())
+                && user.getRole() == remote.role()
+                && user.isActive() == remote.active()
+                && Objects.equals(user.getCompanyId(), remote.companyId());
     }
 
     private User findExisting(KeycloakUserRecord remote) {

@@ -35,6 +35,21 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void handleTaskRejected_returnsServiceUnavailableWithRetryAfter() {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/admin/users/42/overview");
+
+        ResponseEntity<ErrorResponse> response = handler.handleTaskRejected(
+                new org.springframework.core.task.TaskRejectedException("Executor did not accept task"), request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(response.getHeaders().getFirst("Retry-After"))
+                .isEqualTo(String.valueOf(GlobalExceptionHandler.RETRY_AFTER_SECONDS));
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(503);
+        assertThat(response.getBody().message()).isEqualTo("The service is busy, please retry in a few seconds");
+    }
+
+    @Test
     void handleUserNotFound_returnsNotFoundResponse() {
         UUID userId = UUID.randomUUID();
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/users/" + userId);

@@ -1,0 +1,28 @@
+# Direct access to every service from the host (debugging, IDE, Swagger, redis-cli).
+# Docker Compose merges this file automatically on `docker compose up`.
+#
+# Lab 3 (2.2) requires clients to reach the replicas only through the load balancer. To demonstrate that
+# encapsulation, start without this file:  docker compose -f docker-compose.yml up -d
+
+services:
+  redis:
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+
+  # Replicas get a free host port each, chosen by Docker: a fixed port or a port range would collide
+  # because the replicas start in parallel. Look the ports up with:  docker compose ps user-service chat-service
+  user-service:
+    ports:
+      - "8081"
+
+  chat-service:
+    ports:
+      - "8083"
+
+  notification-service:
+    ports:
+      - "8086"
+
+  notifications-db:
+    ports:
+      - "${NOTIFICATIONS_DB_PORT:-5435}:5432"

@@ -69,8 +69,8 @@ Register з'являється на сторінці входу Keycloak. Тем
 підписується на `/topic/chats/{chatId}` і надсилає подію набору тексту в
 `/app/chats/{chatId}/typing`.
 
-Усі три сервіси мають Swagger UI: User Service — `http://localhost:8081/swagger-ui.html`,
-Chat Service — `http://localhost:8083/swagger-ui.html`, а документовані OIDC та
+Усі три сервіси мають Swagger UI: User Service — `http://localhost:8080/user-service/swagger-ui.html`,
+Chat Service — `http://localhost:8080/chat-service/swagger-ui.html`, а документовані OIDC та
 Admin REST endpoints Keycloak — `http://localhost:8085`. У Swagger UI сервісів
 натисніть **Authorize**, увійдіть через Keycloak і використовуйте отриманий
 Bearer token. У User Service `GET /api/v1/users/by-keycloak-id/{keycloakId}`

@@ -1,0 +1,67 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-notification-outbox
+      author: bricklayers
+      comment: >
+        Lab 5/6: accepted e-mail requests (id chosen by the sender, so a retried request is stored once), delivered asynchronously.
+        Rows still PENDING (rejected by a full executor, or a failed attempt) are retried by a Quartz job.
+      changes:
+        - createTable:
+            tableName: notification_outbox
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: recipient
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: subject
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: body
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: attempts
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_error
+                  type: VARCHAR(500)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sent_at
+                  type: TIMESTAMP
+        - createIndex:
+            tableName: notification_outbox
+            indexName: idx_notification_outbox_status_created
+            columns:
+              - column:
+                  name: status
+              - column:
+                  name: created_at

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="uk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationOutbox.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.bricklayers.notificationservice.notification</a> &gt; <span class="el_source">NotificationOutbox.java</span></div><h1>NotificationOutbox.java</h1><pre class="source lang-java linenums">package com.bricklayers.notificationservice.notification;
+
+import com.bricklayers.common.notification.NotificationType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = &quot;notification_outbox&quot;)
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class NotificationOutbox {
+
+    static final int MAX_ERROR_LENGTH = 500;
+
+    @Id
+    @Column(name = &quot;id&quot;, updatable = false, nullable = false)
+    private UUID id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;type&quot;, nullable = false, length = 40)
+    private NotificationType type;
+
+    @Column(name = &quot;recipient&quot;, nullable = false)
+    private String recipient;
+
+    @Column(name = &quot;subject&quot;, nullable = false)
+    private String subject;
+
+    @Column(name = &quot;body&quot;, nullable = false, columnDefinition = &quot;TEXT&quot;)
+    private String body;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;status&quot;, nullable = false, length = 20)
+    @Builder.Default
+    private NotificationStatus status = NotificationStatus.PENDING;
+
+    @Column(name = &quot;attempts&quot;, nullable = false)
+    private int attempts;
+
+    @Column(name = &quot;last_error&quot;, length = MAX_ERROR_LENGTH)
+    private String lastError;
+
+    @Column(name = &quot;created_at&quot;, nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = &quot;sent_at&quot;)
+    private LocalDateTime sentAt;
+
+    @PrePersist
+    protected void onCreate() {
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (createdAt == null) {</span>
+<span class="nc" id="L68">            createdAt = LocalDateTime.now();</span>
+        }
+<span class="nc" id="L70">    }</span>
+
+    void markSent() {
+<span class="fc" id="L73">        attempts++;</span>
+<span class="fc" id="L74">        status = NotificationStatus.SENT;</span>
+<span class="fc" id="L75">        sentAt = LocalDateTime.now();</span>
+<span class="fc" id="L76">        lastError = null;</span>
+<span class="fc" id="L77">    }</span>
+
+    void recordFailure(Throwable failure, int maxAttempts) {
+<span class="fc" id="L80">        attempts++;</span>
+<span class="fc" id="L81">        String message = failure.getClass().getSimpleName() + &quot;: &quot; + failure.getMessage();</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        lastError = message.length() &gt; MAX_ERROR_LENGTH ? message.substring(0, MAX_ERROR_LENGTH) : message;</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        status = attempts &gt;= maxAttempts ? NotificationStatus.FAILED : NotificationStatus.PENDING;</span>
+<span class="fc" id="L84">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

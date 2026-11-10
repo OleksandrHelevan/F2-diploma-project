@@ -1,10 +1,12 @@
 package com.bricklayers.userservice.aop;
 
+import com.bricklayers.userservice.cache.UserProfileCache;
 import com.bricklayers.userservice.dto.SetPasswordRequest;
 import com.bricklayers.userservice.entity.Role;
 import com.bricklayers.userservice.entity.User;
 import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient;
 import com.bricklayers.userservice.mapper.UserMapper;
+import com.bricklayers.userservice.notification.NotificationPublisher;
 import com.bricklayers.userservice.repository.AdminAuditLogRepository;
 import com.bricklayers.userservice.repository.UserRepository;
 import com.bricklayers.userservice.service.UserService;
@@ -41,10 +43,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Calls the annotated {@link UserServiceImpl} methods through the Spring proxy (as
- * {@code AdminController} does) and through self-invocation, to show where the aspects run.
- */
 @SpringJUnitConfig(AdminAspectsProxyTest.AopConfig.class)
 @ExtendWith(OutputCaptureExtension.class)
 class AdminAspectsProxyTest {
@@ -68,6 +66,12 @@ class AdminAspectsProxyTest {
 
     @MockitoBean
     private KeycloakAdminClient keycloakAdminClient;
+
+    @MockitoBean
+    private UserProfileCache profileCache;
+
+    @MockitoBean
+    private NotificationPublisher notificationPublisher;
 
     @Autowired
     private UserService userService;
@@ -124,11 +128,6 @@ class AdminAspectsProxyTest {
                 + otherUser.getId() + " outcome=SUCCESS");
     }
 
-    /**
-     * Self-invocation: {@code deleteAll} calls {@code this.delete(id)}, which never reaches the proxy.
-     * The same delete that is rejected above silently succeeds here, and nothing is audited.
-     * This is the intended outcome of the lab exercise, not a bug to fix.
-     */
     @Test
     void selfInvocation_deleteOwnAccount_bypassesGuardAndAudit(CapturedOutput output) {
         assertThatCode(() -> userService.deleteAll(List.of(admin.getId()))).doesNotThrowAnyException();

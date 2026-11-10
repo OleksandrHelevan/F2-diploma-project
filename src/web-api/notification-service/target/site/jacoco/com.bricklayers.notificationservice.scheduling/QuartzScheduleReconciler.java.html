@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="uk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QuartzScheduleReconciler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.bricklayers.notificationservice.scheduling</a> &gt; <span class="el_source">QuartzScheduleReconciler.java</span></div><h1>QuartzScheduleReconciler.java</h1><pre class="source lang-java linenums">package com.bricklayers.notificationservice.scheduling;
+
+import lombok.extern.slf4j.Slf4j;
+import org.quartz.CronTrigger;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+
+<span class="fc" id="L19">@Slf4j</span>
+@Component
+public class QuartzScheduleReconciler {
+
+    private final Scheduler scheduler;
+    private final List&lt;JobDetail&gt; jobs;
+    private final List&lt;Trigger&gt; triggers;
+
+<span class="fc" id="L27">    public QuartzScheduleReconciler(Scheduler scheduler, List&lt;JobDetail&gt; jobs, List&lt;Trigger&gt; triggers) {</span>
+<span class="fc" id="L28">        this.scheduler = scheduler;</span>
+<span class="fc" id="L29">        this.jobs = jobs;</span>
+<span class="fc" id="L30">        this.triggers = triggers;</span>
+<span class="fc" id="L31">    }</span>
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void reconcile() throws SchedulerException {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        for (JobDetail declared : jobs) {</span>
+<span class="fc" id="L36">            JobDetail stored = scheduler.getJobDetail(declared.getKey());</span>
+<span class="pc bpc" id="L37" title="2 of 4 branches missed.">            if (stored != null &amp;&amp; !sameJob(stored, declared)) {</span>
+<span class="nc" id="L38">                scheduler.addJob(declared, true);</span>
+<span class="nc" id="L39">                log.warn(&quot;Quartz job {} changed in this version: stored definition replaced&quot;, declared.getKey());</span>
+            }
+<span class="fc" id="L41">        }</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        for (Trigger declared : triggers) {</span>
+<span class="fc" id="L43">            Trigger stored = scheduler.getTrigger(declared.getKey());</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">            if (stored == null) {</span>
+<span class="nc" id="L45">                scheduler.scheduleJob(declared);</span>
+<span class="nc" id="L46">                log.warn(&quot;Quartz trigger {} was missing and has been scheduled&quot;, declared.getKey());</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            } else if (!sameTrigger(stored, declared)) {</span>
+<span class="fc" id="L48">                scheduler.rescheduleJob(declared.getKey(), declared);</span>
+<span class="fc" id="L49">                log.warn(&quot;Quartz trigger {} changed in this version: rescheduled&quot;, declared.getKey());</span>
+            }
+<span class="fc" id="L51">        }</span>
+<span class="fc" id="L52">        log.info(&quot;Quartz schedule reconciled: {} job(s), {} trigger(s) on scheduler {}&quot;,</span>
+<span class="fc" id="L53">                jobs.size(), triggers.size(), scheduler.getSchedulerInstanceId());</span>
+<span class="fc" id="L54">    }</span>
+
+    static boolean sameJob(JobDetail stored, JobDetail declared) {
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        return stored.getJobClass().equals(declared.getJobClass())</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(stored.getDescription(), declared.getDescription())</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">                &amp;&amp; stored.isDurable() == declared.isDurable()</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">                &amp;&amp; stored.requestsRecovery() == declared.requestsRecovery()</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">                &amp;&amp; sameData(stored.getJobDataMap(), declared.getJobDataMap());</span>
+    }
+
+    static boolean sameTrigger(Trigger stored, Trigger declared) {
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (!stored.getJobKey().equals(declared.getJobKey())</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">                || stored.getMisfireInstruction() != declared.getMisfireInstruction()</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">                || !Objects.equals(stored.getDescription(), declared.getDescription())</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">                || !sameData(stored.getJobDataMap(), declared.getJobDataMap())) {</span>
+<span class="nc" id="L69">            return false;</span>
+        }
+<span class="pc bpc" id="L71" title="2 of 4 branches missed.">        if (stored instanceof CronTrigger storedCron &amp;&amp; declared instanceof CronTrigger declaredCron) {</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            return storedCron.getCronExpression().equals(declaredCron.getCronExpression())</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">                    &amp;&amp; storedCron.getTimeZone().getID().equals(declaredCron.getTimeZone().getID());</span>
+        }
+<span class="nc bnc" id="L75" title="All 4 branches missed.">        if (stored instanceof SimpleTrigger storedSimple &amp;&amp; declared instanceof SimpleTrigger declaredSimple) {</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            return storedSimple.getRepeatInterval() == declaredSimple.getRepeatInterval()</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                    &amp;&amp; storedSimple.getRepeatCount() == declaredSimple.getRepeatCount();</span>
+        }
+<span class="nc" id="L79">        return false;</span>
+    }
+
+    private static boolean sameData(JobDataMap stored, JobDataMap declared) {
+<span class="fc" id="L83">        return new HashMap&lt;&gt;(stored.getWrappedMap()).equals(new HashMap&lt;&gt;(declared.getWrappedMap()));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

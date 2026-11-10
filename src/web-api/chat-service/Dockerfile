@@ -9,6 +9,7 @@ COPY common/pom.xml common/
 COPY user-service/pom.xml user-service/
 COPY market-service/pom.xml market-service/
 COPY chat-service/pom.xml chat-service/
+COPY notification-service/pom.xml notification-service/
 
 COPY common/src common/src
 COPY chat-service/src chat-service/src

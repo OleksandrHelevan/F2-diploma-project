@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.ResourceAccessException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -140,6 +142,15 @@ class KeycloakUserSyncSchedulerTest {
         assertThatThrownBy(() -> scheduler.synchronizeUsers())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Invalid companyId");
+        verify(importService, never()).synchronize(any());
+    }
+
+    @Test
+    void synchronizeUsers_keycloakNotReachable_skipsThisRunWithoutThrowing() {
+        when(keycloakAdminClient.getAccessToken()).thenThrow(new ResourceAccessException(
+                "I/O error on POST request", new java.net.ConnectException("Connection refused")));
+
+        assertThatCode(() -> scheduler.synchronizeUsers()).doesNotThrowAnyException();
         verify(importService, never()).synchronize(any());
     }
 

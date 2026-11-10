@@ -7,6 +7,8 @@ import com.bricklayers.userservice.dto.UpdateUserRequest;
 import com.bricklayers.userservice.dto.UserDto;
 import com.bricklayers.userservice.exception.UserNotFoundException;
 import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient;
+import com.bricklayers.userservice.overview.AccountOverviewDto;
+import com.bricklayers.userservice.overview.AccountOverviewService;
 import com.bricklayers.userservice.repository.UserRepository;
 import com.bricklayers.userservice.service.UserService;
 import jakarta.validation.Valid;
@@ -33,6 +35,7 @@ public class AdminController {
 
     private final UserService userService;
     private final UserRepository userRepository;
+    private final AccountOverviewService accountOverviewService;
 
     @GetMapping("/stats")
     public Map<String, Object> stats() {
@@ -53,6 +56,12 @@ public class AdminController {
     @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<UserDto> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.getById(id));
+    }
+
+    @GetMapping("/{id}/overview")
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    public ResponseEntity<AccountOverviewDto> overview(@PathVariable UUID id) {
+        return ResponseEntity.ok(accountOverviewService.overview(id));
     }
 
     @GetMapping

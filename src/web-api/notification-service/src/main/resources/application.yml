@@ -1,0 +1,89 @@
+spring:
+  application:
+    name: notification-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5435/notifications_db}
+    username: ${SPRING_DATASOURCE_USERNAME:notifications_service}
+    password: ${SPRING_DATASOURCE_PASSWORD:notifications_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      connection-timeout: 3000
+      data-source-properties:
+        ApplicationName: ${INSTANCE_ID:${HOSTNAME:notification-service}}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  # Lab 5: SMTP (Mailpit in Docker Compose, UI on http://localhost:8025)
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail.smtp.connectiontimeout: 2000
+      mail.smtp.timeout: 3000
+      mail.smtp.writetimeout: 3000
+
+  # Lab 6: persistent, clustered Quartz scheduler. Tables come from Liquibase (02-create-quartz-tables.yaml).
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: never
+    scheduler-name: notification-service-scheduler
+    # Keep stored triggers (their state survives restarts); QuartzScheduleReconciler applies changed definitions.
+    overwrite-existing-jobs: false
+    auto-startup: ${QUARTZ_ENABLED:true}
+    wait-for-jobs-to-complete-on-shutdown: true
+    properties:
+      org.quartz.scheduler.instanceId: AUTO
+      org.quartz.jobStore.driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+      org.quartz.jobStore.tablePrefix: QRTZ_
+      # Every replica runs a scheduler; row locks in QRTZ_LOCKS make each fire run on exactly one of them.
+      org.quartz.jobStore.isClustered: true
+      org.quartz.jobStore.clusterCheckinInterval: 10000
+      # A fire later than this is a misfire and the trigger's misfire instruction applies.
+      org.quartz.jobStore.misfireThreshold: 60000
+      org.quartz.threadPool.threadCount: 2
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${keycloak.issuer-uri}
+          jwk-set-uri: ${keycloak.jwk-set-uri}
+
+server:
+  port: ${SERVER_PORT:8086}
+  shutdown: graceful
+
+app:
+  instance-id: ${INSTANCE_ID:${HOSTNAME:}}
+  # Lab 5: the single bounded pool for every @Async method (AsyncConfig).
+  async:
+    core-size: ${ASYNC_CORE_SIZE:4}
+    max-size: ${ASYNC_MAX_SIZE:8}
+    queue-capacity: ${ASYNC_QUEUE_CAPACITY:50}
+    thread-name-prefix: notif-async-
+    await-termination: 20s
+  notifications:
+    from: no-reply@bricklayers.local
+    max-attempts: 5
+    # Emulates the round trip of a commercial e-mail API (Mailpit itself answers in milliseconds).
+    provider-latency: ${MAIL_PROVIDER_LATENCY:1s}
+  # Lab 6
+  quartz:
+    time-zone: ${QUARTZ_TIME_ZONE:Europe/Kyiv}
+    notification-retry-interval: ${NOTIFICATION_RETRY_INTERVAL:60s}
+    notification-sweep-cron: "0 0 3 * * ?"
+    notification-retention-cron: "0 30 2 * * ?"
+    notification-retention-days: ${NOTIFICATION_RETENTION_DAYS:30}
+
+keycloak:
+  issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8084/realms/bricklayers}
+  jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8084/realms/bricklayers/protocol/openid-connect/certs}

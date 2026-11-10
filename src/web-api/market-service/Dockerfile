@@ -9,6 +9,7 @@ COPY common/pom.xml common/
 COPY user-service/pom.xml user-service/
 COPY market-service/pom.xml market-service/
 COPY chat-service/pom.xml chat-service/
+COPY notification-service/pom.xml notification-service/
 
 COPY market-service/src market-service/src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -pl market-service -am clean package -DskipTests

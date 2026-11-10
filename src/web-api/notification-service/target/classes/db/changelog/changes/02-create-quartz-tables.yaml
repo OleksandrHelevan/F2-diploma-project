@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-quartz-tables
+      author: bricklayers
+      comment: >
+        Lab 6: Quartz JDBC job store (QRTZ_* tables). Spring Boot must not create them itself:
+        spring.quartz.jdbc.initialize-schema=never.
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/quartz-tables-postgres.sql
+            relativeToChangelogFile: false
+            splitStatements: true
+            stripComments: true
+            endDelimiter: ";"
+      rollback:
+        - sql:
+            sql: >
+              DROP TABLE IF EXISTS QRTZ_FIRED_TRIGGERS, QRTZ_PAUSED_TRIGGER_GRPS, QRTZ_SCHEDULER_STATE, QRTZ_LOCKS,
+              QRTZ_SIMPLE_TRIGGERS, QRTZ_CRON_TRIGGERS, QRTZ_SIMPROP_TRIGGERS, QRTZ_BLOB_TRIGGERS, QRTZ_TRIGGERS,
+              QRTZ_JOB_DETAILS, QRTZ_CALENDARS;

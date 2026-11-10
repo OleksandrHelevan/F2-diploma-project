@@ -10,6 +10,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
@@ -25,6 +26,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import java.util.Objects;
 
 @Configuration
 @EnableWebSecurity
@@ -39,8 +41,9 @@ public class SecurityConfig {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/", "/css/**", "/error", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                    .requestMatchers("/", "/css/**", "/error", "/health", "/user-service/swagger-ui.html", "/user-service/swagger-ui/**", "/user-service/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("SUPERADMIN")
                         .requestMatchers("/api/v1/**").authenticated()
                         .requestMatchers("/users/**").authenticated()
@@ -49,10 +52,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
-                .logout(logout -> logout
-                        .logoutSuccessUrl("/")
-                        .deleteCookies("JSESSIONID"));
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)));
 
         return http.build();
     }
@@ -83,7 +83,7 @@ public class SecurityConfig {
             @Value("${keycloak.issuer-uri}") String issuerUri,
             @Value("${keycloak.jwk-set-uri}") String jwkSetUri) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
-        OAuth2TokenValidator<Jwt> audienceValidator = jwt -> jwt.getAudience().contains("user-service")
+        OAuth2TokenValidator<Jwt> audienceValidator = jwt -> Objects.requireNonNull(jwt.getAudience()).contains("user-service")
                 ? OAuth2TokenValidatorResult.success()
                 : OAuth2TokenValidatorResult.failure(
                         new OAuth2Error("invalid_token", "Token audience does not include user-service", null));

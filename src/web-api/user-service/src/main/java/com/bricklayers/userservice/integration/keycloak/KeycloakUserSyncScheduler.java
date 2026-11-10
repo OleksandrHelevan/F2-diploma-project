@@ -8,10 +8,12 @@ import com.bricklayers.userservice.integration.keycloak.KeycloakUserImportServic
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.ResourceAccessException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,11 +39,25 @@ public class KeycloakUserSyncScheduler {
     @Value("${keycloak.sync.default-role:BUILDER}")
     private Role defaultRole;
 
+    @Value("${keycloak.sync.fixed-delay-ms:60000}")
+    private long fixedDelayMs;
+
     @Scheduled(
             initialDelayString = "${keycloak.sync.initial-delay-ms:10000}",
             fixedDelayString = "${keycloak.sync.fixed-delay-ms:60000}"
     )
+    @SchedulerLock(name = "keycloak-user-sync", lockAtLeastFor = "PT30S", lockAtMostFor = "PT5M")
     public void synchronizeUsers() {
+        try {
+            synchronizeAllPages();
+        } catch (ResourceAccessException unreachable) {
+
+            log.warn("Keycloak user synchronization skipped: Keycloak is not reachable ({}); next attempt in {} ms",
+                    rootMessage(unreachable), fixedDelayMs);
+        }
+    }
+
+    private void synchronizeAllPages() {
         String accessToken = keycloakAdminClient.getAccessToken();
         List<KeycloakUserRecord> importedUsers = new ArrayList<>();
 
@@ -89,6 +105,14 @@ public class KeycloakUserSyncScheduler {
                 role,
                 companyId,
                 Boolean.TRUE.equals(user.enabled()));
+    }
+
+    private static String rootMessage(Throwable failure) {
+        Throwable root = failure;
+        while (root.getCause() != null) {
+            root = root.getCause();
+        }
+        return root.getClass().getSimpleName() + ": " + root.getMessage();
     }
 
     private static boolean hasRequiredIdentity(KeycloakUser user) {

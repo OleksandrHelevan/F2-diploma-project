@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="uk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationTemplates.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.bricklayers.notificationservice.notification</a> &gt; <span class="el_source">NotificationTemplates.java</span></div><h1>NotificationTemplates.java</h1><pre class="source lang-java linenums">package com.bricklayers.notificationservice.notification;
+
+import com.bricklayers.common.notification.NotificationRequest;
+import org.springframework.stereotype.Component;
+
+import java.util.Map;
+
+@Component
+<span class="fc" id="L9">public class NotificationTemplates {</span>
+
+<span class="fc" id="L11">    public record Rendered(String subject, String body) {</span>
+    }
+
+    public Rendered render(NotificationRequest request) {
+<span class="pc bpc" id="L15" title="1 of 2 branches missed.">        Map&lt;String, String&gt; params = request.params() == null ? Map.of() : request.params();</span>
+<span class="fc bfc" id="L16" title="All 2 branches covered.">        return switch (request.type()) {</span>
+<span class="fc" id="L17">            case WELCOME -&gt; new Rendered(&quot;Welcome to Bricklayers&quot;,</span>
+<span class="fc" id="L18">                    &quot;Hello &quot; + param(params, &quot;displayName&quot;) + &quot;,\n\nan account '&quot; + param(params, &quot;username&quot;)</span>
+<span class="fc" id="L19">                            + &quot;' was created for you with the role &quot; + param(params, &quot;role&quot;) + &quot;.\n&quot;);</span>
+<span class="fc" id="L20">            case ACCOUNT_CHANGED -&gt; new Rendered(&quot;Your Bricklayers account was updated&quot;,</span>
+<span class="fc" id="L21">                    &quot;Hello &quot; + param(params, &quot;displayName&quot;) + &quot;,\n\nan administrator updated your account. &quot;</span>
+<span class="fc" id="L22">                            + roleLine(params) + &quot;\nAccount active: &quot; + param(params, &quot;active&quot;) + &quot;\n&quot;);</span>
+        };
+    }
+
+    private static String roleLine(Map&lt;String, String&gt; params) {
+<span class="fc" id="L27">        String role = param(params, &quot;role&quot;);</span>
+<span class="fc" id="L28">        String previousRole = params.get(&quot;previousRole&quot;);</span>
+<span class="pc bpc" id="L29" title="1 of 4 branches missed.">        return previousRole == null || previousRole.equals(role)</span>
+<span class="fc" id="L30">                ? &quot;Your role is &quot; + role + &quot;.&quot;</span>
+<span class="fc" id="L31">                : &quot;Your role changed from &quot; + previousRole + &quot; to &quot; + role + &quot;.&quot;;</span>
+    }
+
+    private static String param(Map&lt;String, String&gt; params, String key) {
+<span class="fc" id="L35">        String value = params.get(key);</span>
+<span class="pc bpc" id="L36" title="1 of 4 branches missed.">        return value == null || value.isBlank() ? &quot;-&quot; : value;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

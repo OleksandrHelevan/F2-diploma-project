@@ -18,6 +18,42 @@
   },
   "clients": [
     {
+      "clientId": "bricklayers-load-test",
+      "name": "bricklayers-load-test",
+      "description": "Demo-only public client with password grant, used by k6 and lab scripts to obtain tokens",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "attributes": { "access.token.lifespan": "1800" },
+      "protocolMappers": [
+        {
+          "name": "user-service audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "user-service",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "chat-service audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "chat-service",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": ["web-origins", "acr", "basic", "profile", "roles", "email"]
+    },
+    {
       "clientId": "user-service",
       "name": "user-service",
       "enabled": true,
@@ -70,6 +106,19 @@
       "serviceAccountsEnabled": true,
       "protocol": "openid-connect",
       "fullScopeAllowed": true,
+      "protocolMappers": [
+        {
+          "name": "notification-service audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "notification-service",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ],
       "defaultClientScopes": [
         "roles"
       ]
@@ -87,20 +136,31 @@
       "fullScopeAllowed": true
     },
     {
+      "clientId": "notification-service",
+      "name": "notification-service",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true
+    },
+    {
       "clientId": "bricklayers-web-app",
       "name": "bricklayers-web-app",
       "enabled": true,
       "publicClient": true,
       "redirectUris": [
         "http://localhost:3000/*",
-        "http://localhost:8081/swagger-ui/oauth2-redirect.html",
-        "http://localhost:8083/swagger-ui/oauth2-redirect.html",
+        "http://localhost:8080/user-service/swagger-ui/oauth2-redirect.html",
+        "http://localhost:8080/chat-service/swagger-ui/oauth2-redirect.html",
         "http://localhost:8085/oauth2-redirect.html"
       ],
       "webOrigins": [
         "http://localhost:3000",
-        "http://localhost:8081",
-        "http://localhost:8083",
+        "http://localhost:8080",
         "http://localhost:8085"
       ],
       "standardFlowEnabled": true,
@@ -140,6 +200,17 @@
       ]
     }
   ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": ["{\"unmanagedAttributePolicy\":\"ADMIN_EDIT\",\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"companyId\",\"displayName\":\"Company ID\",\"validations\":{\"length\":{\"max\":36}},\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"]
+        }
+      }
+    ]
+  },
   "users": [
     {
       "username": "service-account-user-sync-service",
@@ -177,11 +248,46 @@
       "emailVerified": true,
       "firstName": "Ivan",
       "lastName": "Builder",
+      "attributes": { "companyId": ["5f0c8f3e-6d2a-4b7e-9c41-2a7d3e8b1c05"] },
       "realmRoles": ["BUILDER"],
       "credentials": [
         {
           "type": "password",
           "value": "worker",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "foreman",
+      "enabled": true,
+      "email": "foreman@bricklayers.local",
+      "emailVerified": true,
+      "firstName": "Oleksii",
+      "lastName": "Foreman",
+      "attributes": { "companyId": ["5f0c8f3e-6d2a-4b7e-9c41-2a7d3e8b1c05"] },
+      "realmRoles": ["FOREMAN"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "foreman",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "supplier",
+      "enabled": true,
+      "email": "supplier@bricklayers.local",
+      "emailVerified": true,
+      "firstName": "Petro",
+      "lastName": "Supplier",
+      "attributes": { "companyId": ["5f0c8f3e-6d2a-4b7e-9c41-2a7d3e8b1c05"] },
+      "realmRoles": ["SUPPLIER"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "supplier",
           "temporary": false
         }
       ]

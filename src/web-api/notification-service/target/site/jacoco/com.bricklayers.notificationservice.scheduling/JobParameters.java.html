@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="uk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JobParameters.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.bricklayers.notificationservice.scheduling</a> &gt; <span class="el_source">JobParameters.java</span></div><h1>JobParameters.java</h1><pre class="source lang-java linenums">package com.bricklayers.notificationservice.scheduling;
+
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+
+import java.util.Set;
+import java.util.TreeSet;
+
+public final class JobParameters {
+
+    private final JobDataMap values;
+    private final String jobName;
+
+<span class="fc" id="L15">    private JobParameters(JobDataMap values, String jobName) {</span>
+<span class="fc" id="L16">        this.values = values;</span>
+<span class="fc" id="L17">        this.jobName = jobName;</span>
+<span class="fc" id="L18">    }</span>
+
+    public static JobParameters of(JobExecutionContext context, Set&lt;String&gt; expectedKeys) throws JobExecutionException {
+<span class="fc" id="L21">        return of(context.getMergedJobDataMap(), context.getJobDetail().getKey().toString(), expectedKeys);</span>
+    }
+
+    public static JobParameters of(JobDataMap values, String jobName, Set&lt;String&gt; expectedKeys) throws JobExecutionException {
+<span class="fc" id="L25">        Set&lt;String&gt; unknown = new TreeSet&lt;&gt;(values.keySet());</span>
+<span class="fc" id="L26">        unknown.removeAll(expectedKeys);</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        if (!unknown.isEmpty()) {</span>
+<span class="fc" id="L28">            throw new JobExecutionException(&quot;Job &quot; + jobName + &quot; got unknown parameter(s) &quot; + unknown</span>
+                    + &quot;; expected &quot; + new TreeSet&lt;&gt;(expectedKeys), false);
+        }
+<span class="fc" id="L31">        return new JobParameters(values, jobName);</span>
+    }
+
+    public int intAtLeast(String key, int min) throws JobExecutionException {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (!values.containsKey(key)) {</span>
+<span class="fc" id="L36">            throw new JobExecutionException(&quot;Job &quot; + jobName + &quot; is missing required parameter '&quot; + key + &quot;'&quot;, false);</span>
+        }
+<span class="fc" id="L38">        Object raw = values.get(key);</span>
+        int value;
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (raw instanceof Number number) {</span>
+<span class="fc" id="L41">            value = number.intValue();</span>
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">        } else if (raw instanceof String text) {</span>
+            try {
+<span class="nc" id="L44">                value = Integer.parseInt(text.trim());</span>
+<span class="fc" id="L45">            } catch (NumberFormatException exception) {</span>
+<span class="fc" id="L46">                throw new JobExecutionException(&quot;Job &quot; + jobName + &quot; parameter '&quot; + key + &quot;' is not an integer: &quot; + text, false);</span>
+<span class="nc" id="L47">            }</span>
+        } else {
+<span class="nc" id="L49">            throw new JobExecutionException(&quot;Job &quot; + jobName + &quot; parameter '&quot; + key + &quot;' has unsupported type &quot;</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                    + (raw == null ? &quot;null&quot; : raw.getClass().getSimpleName()), false);</span>
+        }
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (value &lt; min) {</span>
+<span class="nc" id="L53">            throw new JobExecutionException(&quot;Job &quot; + jobName + &quot; parameter '&quot; + key + &quot;' must be &gt;= &quot; + min + &quot;, got &quot; + value, false);</span>
+        }
+<span class="fc" id="L55">        return value;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

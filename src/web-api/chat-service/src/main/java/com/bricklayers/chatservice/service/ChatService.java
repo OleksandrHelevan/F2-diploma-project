@@ -4,7 +4,7 @@ package com.bricklayers.chatservice.service;
   @author   user
   @project   F2-diploma-project
   @class  ChatService
-  @version  1.0.0 
+  @version  1.0.0
   @since 06.10.2026 - 22.11
 */
 
@@ -118,12 +118,12 @@ public class ChatService {
                         participant(user.userId(), ParticipantRole.FOREMAN, now),
                         participant(target.id(), targetRole, now))))
                 .createdAt(now)
-                .lastMessageAt(now)   // щоб новий чат не провалився в кінець списку
+                .lastMessageAt(now)
                 .build();
         try {
             return chatRepository.save(chat);
         } catch (DuplicateKeyException e) {
-            // гонка: двоє створили одночасно, унікальний індекс directKey нас врятував
+
             return chatRepository.findByDirectKey(directKey).orElseThrow(() -> e);
         }
     }

@@ -5,14 +5,15 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   server: {
+    // User and chat replicas are reachable only through the HAProxy load balancer (docker compose: port 8080).
     proxy: {
-      '/api/v1/chats': 'http://localhost:8083',
+      '/api/v1/chats': 'http://localhost:8080',
       '/ws': {
-        target: 'ws://localhost:8083',
+        target: 'ws://localhost:8080',
         ws: true,
       },
       '/api/v1/products': 'http://localhost:8082',
-      '/api': 'http://localhost:8081',
+      '/api': 'http://localhost:8080',
     },
   },
 })

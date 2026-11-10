@@ -1,5 +1,6 @@
 package com.bricklayers.userservice.service.impl;
 
+import com.bricklayers.userservice.cache.UserProfileCache;
 import com.bricklayers.userservice.dto.CreateUserRequest;
 import com.bricklayers.userservice.dto.UpdateUserRequest;
 import com.bricklayers.userservice.dto.UserDto;
@@ -9,6 +10,7 @@ import com.bricklayers.userservice.exception.UserAlreadyExistsException;
 import com.bricklayers.userservice.exception.UserNotFoundException;
 import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient;
 import com.bricklayers.userservice.mapper.UserMapper;
+import com.bricklayers.userservice.notification.NotificationPublisher;
 import com.bricklayers.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -42,6 +45,12 @@ class UserServiceImplTest {
 
     @Mock
     private KeycloakAdminClient keycloakAdminClient;
+
+    @Spy
+    private UserProfileCache profileCache = new UserProfileCache(null, null, false, 300);
+
+    @Mock
+    private NotificationPublisher notificationPublisher;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -101,6 +110,7 @@ class UserServiceImplTest {
                 "service-token");
         verify(userMapper).toEntity(request);
         verify(userMapper).toDto(user);
+        verify(notificationPublisher).welcome(user);
     }
 
     @Test
@@ -159,6 +169,51 @@ class UserServiceImplTest {
         assertThat(userService.getByKeycloakId("keycloak-user-id")).isEqualTo(userDto);
     }
 
+    @Test
+    void getColleagues_returnsActiveCompanyUsersExceptSelfFilteredByRole() {
+        UUID companyId = UUID.randomUUID();
+        user.setCompanyId(companyId);
+        User foreman = User.builder().id(UUID.randomUUID()).role(Role.FOREMAN).companyId(companyId).active(true).build();
+        User builder = User.builder().id(UUID.randomUUID()).role(Role.BUILDER).companyId(companyId).active(true).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.findAllByCompanyIdAndActiveTrueOrderByUsername(companyId))
+                .thenReturn(List.of(user, foreman, builder));
+        when(userMapper.toDto(builder)).thenReturn(userDto);
+
+        assertThat(userService.getColleagues(userId, Role.BUILDER)).containsExactly(userDto);
+    }
+
+    @Test
+    void getColleagues_userWithoutCompany_returnsEmptyList() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        assertThat(userService.getColleagues(userId, null)).isEmpty();
+        verify(userRepository, never()).findAllByCompanyIdAndActiveTrueOrderByUsername(any());
+    }
+
+    @Test
+    void getColleague_sameCompany_returnsMappedDto() {
+        UUID companyId = UUID.randomUUID();
+        user.setCompanyId(companyId);
+        User colleague = User.builder().id(UUID.randomUUID()).role(Role.FOREMAN).companyId(companyId).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.findById(colleague.getId())).thenReturn(Optional.of(colleague));
+        when(userMapper.toDto(colleague)).thenReturn(userDto);
+
+        assertThat(userService.getColleague(userId, colleague.getId())).isEqualTo(userDto);
+    }
+
+    @Test
+    void getColleague_otherCompany_throwsNotFound() {
+        user.setCompanyId(UUID.randomUUID());
+        User stranger = User.builder().id(UUID.randomUUID()).role(Role.BUILDER).companyId(UUID.randomUUID()).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.findById(stranger.getId())).thenReturn(Optional.of(stranger));
+
+        assertThatThrownBy(() -> userService.getColleague(userId, stranger.getId()))
+                .isInstanceOf(UserNotFoundException.class);
+        verify(userMapper, never()).toDto(any(User.class));
+    }
 
     @Test
     void update_changedEmail_savesUpdatedEntityAndReturnsDto() {
@@ -203,6 +258,7 @@ class UserServiceImplTest {
                 "service-token");
         verify(userRepository).saveAndFlush(user);
         verify(userMapper).toDto(user);
+        verify(notificationPublisher).accountChanged(user, Role.BUILDER);
     }
 
     @Test

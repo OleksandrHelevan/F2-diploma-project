@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.core.task.TaskRejectedException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -22,6 +24,8 @@ import java.util.List;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    static final int RETRY_AFTER_SECONDS = 2;
 
     private final MessageSource messageSource;
 
@@ -75,6 +79,16 @@ public class GlobalExceptionHandler {
                 null
         );
         return ResponseEntity.status(status).body(body);
+    }
+
+    @ExceptionHandler(TaskRejectedException.class)
+    public ResponseEntity<ErrorResponse> handleTaskRejected(TaskRejectedException ex, HttpServletRequest request) {
+        log.warn("Async executor saturated on {}: {}", request.getRequestURI(), ex.getMessage());
+        String message = resolve("service.busy", null);
+        ResponseEntity<ErrorResponse> response = build(HttpStatus.SERVICE_UNAVAILABLE, message, request, null);
+        return ResponseEntity.status(response.getStatusCode())
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(RETRY_AFTER_SECONDS))
+                .body(response.getBody());
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

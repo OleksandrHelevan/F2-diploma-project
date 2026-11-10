@@ -1,13 +1,18 @@
 package com.bricklayers.userservice.security;
 
 import com.bricklayers.userservice.annotation.CurrentUserId;
+import com.bricklayers.userservice.cache.UserProfileCache;
+import com.bricklayers.userservice.dto.UserDto;
+import com.bricklayers.userservice.entity.Role;
 import com.bricklayers.userservice.entity.User;
+import com.bricklayers.userservice.mapper.UserMapper;
 import com.bricklayers.userservice.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.InjectMocks;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.MethodParameter;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -30,6 +35,12 @@ class CurrentUserIdArgumentResolverTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private UserMapper userMapper;
+
+    @Spy
+    private UserProfileCache profileCache = new UserProfileCache(null, null, false, 300);
+
     @InjectMocks
     private CurrentUserIdArgumentResolver resolver;
 
@@ -43,6 +54,8 @@ class CurrentUserIdArgumentResolverTest {
         UUID localUserId = UUID.randomUUID();
         User user = User.builder().id(localUserId).keycloakId("keycloak-user-id").build();
         when(userRepository.findByKeycloakId("keycloak-user-id")).thenReturn(Optional.of(user));
+        when(userMapper.toDto(user)).thenReturn(new UserDto(
+                localUserId, "builder", "builder@example.com", null, null, Role.BUILDER, null, true, null, null));
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "HS256")
                 .subject("keycloak-user-id")

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -12,6 +13,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.client.RestClient;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,6 +23,7 @@ public class KeycloakAdminClient {
 
     private static final ParameterizedTypeReference<List<KeycloakUser>> USERS_TYPE = new ParameterizedTypeReference<>() {};
     private static final ParameterizedTypeReference<List<KeycloakRole>> ROLES_TYPE = new ParameterizedTypeReference<>() {};
+    private static final ParameterizedTypeReference<List<Map<String, Object>>> SESSIONS_TYPE = new ParameterizedTypeReference<>() {};
 
     private final RestClient restClient;
     private final String adminBaseUrl;
@@ -34,7 +37,11 @@ public class KeycloakAdminClient {
             @Value("${keycloak.admin.client-id}") String clientId,
             @Value("${keycloak.admin.client-secret}") String clientSecret
     ) {
-        this.restClient = RestClient.builder().build();
+
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(Duration.ofSeconds(2));
+        requestFactory.setReadTimeout(Duration.ofSeconds(5));
+        this.restClient = RestClient.builder().requestFactory(requestFactory).build();
         this.adminBaseUrl = adminBaseUrl.replaceAll("/+$", "");
         this.realm = realm;
         this.clientId = clientId;
@@ -84,6 +91,15 @@ public class KeycloakAdminClient {
                 .retrieve()
                 .body(ROLES_TYPE);
         return roles == null ? List.of() : roles;
+    }
+
+    public int countSessions(String userId, String accessToken) {
+        List<Map<String, Object>> sessions = restClient.get()
+                .uri(endpoint("admin", "realms", realm, "users", userId, "sessions"))
+                .headers(headers -> headers.setBearerAuth(accessToken))
+                .retrieve()
+                .body(SESSIONS_TYPE);
+        return sessions == null ? 0 : sessions.size();
     }
 
     public String createUser(String username,

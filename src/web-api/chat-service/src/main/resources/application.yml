@@ -4,6 +4,14 @@ spring:
   mongodb:
     uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/chat_db}
     database: ${SPRING_DATA_MONGODB_NAME:chat_db}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      connect-timeout: 200ms
+      timeout: 200ms
+      repositories:
+        enabled: false
   security:
     oauth2:
       resourceserver:
@@ -13,6 +21,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:8083}
+  shutdown: graceful
+
+app:
+  instance-id: ${INSTANCE_ID:${HOSTNAME:}}
 
 user-service:
   url: ${USER_SERVICE_URL:http://localhost:8081}
@@ -24,12 +36,16 @@ keycloak:
 chat:
   demo:
     enabled: ${CHAT_DEMO_ENABLED:false}
+  events:
+    # local: in-process STOMP broker only (single instance); redis: fan out events to every replica.
+    relay: ${CHAT_EVENTS_RELAY:local}
 
+# Prefixed paths let HAProxy route Swagger to the right service: localhost:8080/chat-service/swagger-ui.html
 springdoc:
   api-docs:
-    path: /v3/api-docs
+    path: /chat-service/v3/api-docs
   swagger-ui:
-    path: /swagger-ui.html
+    path: /chat-service/swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
     display-request-duration: true

@@ -1,0 +1,11 @@
+com\bricklayers\notificationservice\async\AsyncProcessingTest$Config.class
+com\bricklayers\notificationservice\scheduling\QuartzTestSupport.class
+com\bricklayers\notificationservice\async\AsyncProcessingTest.class
+com\bricklayers\notificationservice\config\SecurityConfigTest.class
+com\bricklayers\notificationservice\scheduling\QuartzPersistenceIT.class
+com\bricklayers\notificationservice\async\ExecutorSaturationTest.class
+com\bricklayers\notificationservice\async\ExecutorSaturationTest$Config.class
+com\bricklayers\notificationservice\notification\NotificationTemplatesTest.class
+com\bricklayers\notificationservice\scheduling\QuartzSchedulerBehaviourTest.class
+com\bricklayers\notificationservice\scheduling\QuartzJobsConfigTest.class
+com\bricklayers\notificationservice\scheduling\QuartzJobsTest.class

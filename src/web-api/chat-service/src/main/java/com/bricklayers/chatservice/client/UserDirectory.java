@@ -16,14 +16,13 @@ import org.springframework.web.bind.annotation.RequestHeader;
 
 @FeignClient(
         name = "user-service",
-        url = "${user-service.url:http://localhost:8081}",
-        path = "/api/v1/users"
+        url = "${user-service.url:http://localhost:8081}"
 )
 public interface UserDirectory {
-    @GetMapping("/{userId}")
+    @GetMapping("/api/v1/users/{userId}")
     UserInfo getUser(@PathVariable String userId);
 
-    @GetMapping("/by-keycloak-id/{keycloakId}")
+    @GetMapping("/api/v1/me/by-keycloak-id/{keycloakId}")
     UserInfo getByKeycloakId(
             @PathVariable("keycloakId") String keycloakId,
             @RequestHeader("Authorization") String authorization);

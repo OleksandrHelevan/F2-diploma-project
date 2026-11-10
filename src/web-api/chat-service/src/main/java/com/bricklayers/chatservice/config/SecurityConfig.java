@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
@@ -33,13 +34,16 @@ public class SecurityConfig {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/ws/**"))
+
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> {
                     authorize.requestMatchers(
                             "/",
                             "/error",
-                            "/swagger-ui.html",
-                            "/swagger-ui/**",
-                            "/v3/api-docs/**",
+                            "/health",
+                            "/chat-service/swagger-ui.html",
+                            "/chat-service/swagger-ui/**",
+                            "/chat-service/v3/api-docs/**",
                             "/ws/**"
                     ).permitAll();
                     if (demoEnabled) {

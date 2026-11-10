@@ -7,6 +7,13 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:users_service}
     password: ${SPRING_DATASOURCE_PASSWORD:users_password}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      # N replicas x pool size must stay below PostgreSQL max_connections (Lab 3 bottleneck analysis).
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      connection-timeout: 3000
+      data-source-properties:
+        # Lets pg_stat_activity show which replica owns each connection.
+        ApplicationName: ${INSTANCE_ID:${HOSTNAME:user-service}}
 
   jpa:
     hibernate:
@@ -19,6 +26,15 @@ spring:
 
   thymeleaf:
     cache: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # Short timeouts: a slow or stopped Redis must degrade to PostgreSQL reads, not stall requests.
+      connect-timeout: 200ms
+      timeout: 200ms
+      repositories:
+        enabled: false
   security:
     oauth2:
       resourceserver:
@@ -28,6 +44,26 @@ spring:
 
 server:
   port: ${SERVER_PORT:8081}
+  shutdown: graceful
+
+app:
+  instance-id: ${INSTANCE_ID:${HOSTNAME:}}
+  cache:
+    enabled: ${CACHE_ENABLED:false}
+    ttl-seconds: ${CACHE_TTL_SECONDS:300}
+  # Lab 5: the single bounded pool for every @Async method (AsyncConfig).
+  async:
+    core-size: ${ASYNC_CORE_SIZE:4}
+    max-size: ${ASYNC_MAX_SIZE:8}
+    queue-capacity: ${ASYNC_QUEUE_CAPACITY:50}
+    thread-name-prefix: user-async-
+    await-termination: 20s
+    overview-timeout: ${ASYNC_OVERVIEW_TIMEOUT:2s}
+  # notification-service (e-mails). Called after commit, asynchronously, with the user-sync-service token.
+  notifications:
+    service-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
+    max-attempts: 3
+    retry-backoff: 300ms
 
 keycloak:
   base-url: ${KEYCLOAK_BASE_URL:http://localhost:8084}
@@ -46,10 +82,15 @@ keycloak:
 
 logging:
   level:
-    org.springframework.security: DEBUG
+    # Compose lowers this to INFO: per-request DEBUG logging would distort load-test results.
+    org.springframework.security: ${SECURITY_LOG_LEVEL:DEBUG}
 
+# Prefixed paths let HAProxy route Swagger to the right service: localhost:8080/user-service/swagger-ui.html
 springdoc:
+  api-docs:
+    path: /user-service/v3/api-docs
   swagger-ui:
+    path: /user-service/swagger-ui.html
     oauth:
       client-id: bricklayers-web-app
       use-pkce-with-authorization-code-grant: true

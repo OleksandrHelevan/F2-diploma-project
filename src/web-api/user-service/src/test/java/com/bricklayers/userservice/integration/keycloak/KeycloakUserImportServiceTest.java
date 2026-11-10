@@ -1,5 +1,6 @@
 package com.bricklayers.userservice.integration.keycloak;
 
+import com.bricklayers.userservice.cache.UserProfileCache;
 import com.bricklayers.userservice.entity.Role;
 import com.bricklayers.userservice.entity.User;
 import com.bricklayers.userservice.integration.keycloak.KeycloakUserImportService.KeycloakUserRecord;
@@ -16,6 +17,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +27,9 @@ class KeycloakUserImportServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private UserProfileCache profileCache;
 
     @InjectMocks
     private KeycloakUserImportService importService;
@@ -93,5 +99,44 @@ class KeycloakUserImportServiceTest {
         assertThatThrownBy(() -> importService.synchronize(List.of(remote)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Database unavailable");
+    }
+
+    @Test
+    void synchronize_unchangedProfile_isNotRewrittenOrEvicted() {
+        KeycloakUserRecord remote = new KeycloakUserRecord(
+                "keycloak-id", "builder", "builder@example.com",
+                "Ivan", "Builder", Role.BUILDER, null, true);
+        User existing = User.builder()
+                .id(java.util.UUID.randomUUID())
+                .keycloakId("keycloak-id").username("builder").email("builder@example.com")
+                .firstName("Ivan").lastName("Builder").role(Role.BUILDER).active(true)
+                .build();
+        when(userRepository.findByKeycloakId(remote.keycloakId())).thenReturn(Optional.of(existing));
+        when(userRepository.findByUsername(remote.username())).thenReturn(Optional.of(existing));
+        when(userRepository.findByEmail(remote.email())).thenReturn(Optional.of(existing));
+
+        assertThat(importService.synchronize(List.of(remote))).isEqualTo(new SyncResult(0, 0, 0));
+        verify(userRepository, never()).save(any(User.class));
+        verify(profileCache, never()).evict(any(), any());
+    }
+
+    @Test
+    void synchronize_changedProfile_isSavedAndEvictedFromCache() {
+        KeycloakUserRecord remote = new KeycloakUserRecord(
+                "keycloak-id", "builder", "builder@example.com",
+                "Ivan", "Renamed", Role.BUILDER, null, true);
+        User existing = User.builder()
+                .id(java.util.UUID.randomUUID())
+                .keycloakId("keycloak-id").username("builder").email("builder@example.com")
+                .firstName("Ivan").lastName("Builder").role(Role.BUILDER).active(true)
+                .build();
+        when(userRepository.findByKeycloakId(remote.keycloakId())).thenReturn(Optional.of(existing));
+        when(userRepository.findByUsername(remote.username())).thenReturn(Optional.of(existing));
+        when(userRepository.findByEmail(remote.email())).thenReturn(Optional.of(existing));
+
+        assertThat(importService.synchronize(List.of(remote))).isEqualTo(new SyncResult(0, 1, 0));
+        assertThat(existing.getLastName()).isEqualTo("Renamed");
+        verify(userRepository).save(existing);
+        verify(profileCache).evict(existing.getId(), "keycloak-id");
     }
 }

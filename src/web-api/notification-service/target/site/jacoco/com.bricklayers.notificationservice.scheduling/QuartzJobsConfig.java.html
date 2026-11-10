@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="uk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QuartzJobsConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.bricklayers.notificationservice.scheduling</a> &gt; <span class="el_source">QuartzJobsConfig.java</span></div><h1>QuartzJobsConfig.java</h1><pre class="source lang-java linenums">package com.bricklayers.notificationservice.scheduling;
+
+import org.quartz.CronScheduleBuilder;
+import org.quartz.CronTrigger;
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.time.Duration;
+import java.util.TimeZone;
+
+@Configuration
+public class QuartzJobsConfig {
+
+    public static final String NOTIFICATIONS_GROUP = &quot;notifications&quot;;
+    public static final String MAINTENANCE_GROUP = &quot;maintenance&quot;;
+
+<span class="fc" id="L27">    public static final JobKey NOTIFICATION_RETRY_JOB = JobKey.jobKey(&quot;notification-retry&quot;, NOTIFICATIONS_GROUP);</span>
+<span class="fc" id="L28">    public static final TriggerKey NOTIFICATION_RETRY_FREQUENT =</span>
+<span class="fc" id="L29">            TriggerKey.triggerKey(&quot;notification-retry-frequent&quot;, NOTIFICATIONS_GROUP);</span>
+<span class="fc" id="L30">    public static final TriggerKey NOTIFICATION_RETRY_NIGHTLY =</span>
+<span class="fc" id="L31">            TriggerKey.triggerKey(&quot;notification-retry-nightly-sweep&quot;, NOTIFICATIONS_GROUP);</span>
+
+<span class="fc" id="L33">    public static final JobKey NOTIFICATION_RETENTION_JOB = JobKey.jobKey(&quot;notification-retention&quot;, MAINTENANCE_GROUP);</span>
+<span class="fc" id="L34">    public static final TriggerKey NOTIFICATION_RETENTION_DAILY =</span>
+<span class="fc" id="L35">            TriggerKey.triggerKey(&quot;notification-retention-daily&quot;, MAINTENANCE_GROUP);</span>
+
+    private final TimeZone timeZone;
+    private final Duration retryInterval;
+    private final String nightlySweepCron;
+    private final String retentionCron;
+    private final int retentionDays;
+
+    public QuartzJobsConfig(@Value(&quot;${app.quartz.time-zone:Europe/Kyiv}&quot;) String timeZoneId,
+                            @Value(&quot;${app.quartz.notification-retry-interval:60s}&quot;) Duration retryInterval,
+                            @Value(&quot;${app.quartz.notification-sweep-cron:0 0 3 * * ?}&quot;) String nightlySweepCron,
+                            @Value(&quot;${app.quartz.notification-retention-cron:0 30 2 * * ?}&quot;) String retentionCron,
+<span class="fc" id="L47">                            @Value(&quot;${app.quartz.notification-retention-days:30}&quot;) int retentionDays) {</span>
+<span class="fc" id="L48">        this.timeZone = QuartzTimeZones.resolve(timeZoneId);</span>
+<span class="fc" id="L49">        this.retryInterval = retryInterval;</span>
+<span class="fc" id="L50">        this.nightlySweepCron = nightlySweepCron;</span>
+<span class="fc" id="L51">        this.retentionCron = retentionCron;</span>
+<span class="fc" id="L52">        this.retentionDays = retentionDays;</span>
+<span class="fc" id="L53">    }</span>
+
+    @Bean
+    public JobDetail notificationRetryJobDetail() {
+<span class="fc" id="L57">        return JobBuilder.newJob(NotificationRetryJob.class)</span>
+<span class="fc" id="L58">                .withIdentity(NOTIFICATION_RETRY_JOB)</span>
+<span class="fc" id="L59">                .withDescription(&quot;Delivers PENDING e-mails from notification_outbox (rejected or failed async sends)&quot;)</span>
+<span class="fc" id="L60">                .usingJobData(NotificationRetryJob.BATCH_SIZE, 50)</span>
+<span class="fc" id="L61">                .usingJobData(NotificationRetryJob.MAX_ATTEMPTS, 5)</span>
+<span class="fc" id="L62">                .usingJobData(NotificationRetryJob.MIN_AGE_SECONDS, 30)</span>
+<span class="fc" id="L63">                .storeDurably()</span>
+
+<span class="fc" id="L65">                .requestRecovery()</span>
+<span class="fc" id="L66">                .build();</span>
+    }
+
+    @Bean
+    public SimpleTrigger notificationRetryFrequentTrigger(@Qualifier(&quot;notificationRetryJobDetail&quot;) JobDetail job) {
+<span class="fc" id="L71">        return TriggerBuilder.newTrigger()</span>
+<span class="fc" id="L72">                .forJob(job.getKey())</span>
+<span class="fc" id="L73">                .withIdentity(NOTIFICATION_RETRY_FREQUENT)</span>
+<span class="fc" id="L74">                .withDescription(&quot;Every &quot; + retryInterval.toSeconds() + &quot; s, small batch&quot;)</span>
+<span class="fc" id="L75">                .usingJobData(NotificationRetryJob.BATCH_SIZE, 20)</span>
+<span class="fc" id="L76">                .withSchedule(SimpleScheduleBuilder.simpleSchedule()</span>
+<span class="fc" id="L77">                        .withIntervalInMilliseconds(retryInterval.toMillis())</span>
+<span class="fc" id="L78">                        .repeatForever()</span>
+
+<span class="fc" id="L80">                        .withMisfireHandlingInstructionNextWithRemainingCount())</span>
+<span class="fc" id="L81">                .startNow()</span>
+<span class="fc" id="L82">                .build();</span>
+    }
+
+    @Bean
+    public CronTrigger notificationRetryNightlyTrigger(@Qualifier(&quot;notificationRetryJobDetail&quot;) JobDetail job) {
+<span class="fc" id="L87">        return TriggerBuilder.newTrigger()</span>
+<span class="fc" id="L88">                .forJob(job.getKey())</span>
+<span class="fc" id="L89">                .withIdentity(NOTIFICATION_RETRY_NIGHTLY)</span>
+<span class="fc" id="L90">                .withDescription(&quot;Nightly sweep, large batch&quot;)</span>
+<span class="fc" id="L91">                .usingJobData(NotificationRetryJob.BATCH_SIZE, 500)</span>
+<span class="fc" id="L92">                .usingJobData(NotificationRetryJob.MIN_AGE_SECONDS, 0)</span>
+<span class="fc" id="L93">                .withSchedule(CronScheduleBuilder.cronSchedule(nightlySweepCron)</span>
+<span class="fc" id="L94">                        .inTimeZone(timeZone)</span>
+
+<span class="fc" id="L96">                        .withMisfireHandlingInstructionFireAndProceed())</span>
+<span class="fc" id="L97">                .build();</span>
+    }
+
+    @Bean
+    public JobDetail notificationRetentionJobDetail() {
+<span class="fc" id="L102">        return JobBuilder.newJob(NotificationRetentionJob.class)</span>
+<span class="fc" id="L103">                .withIdentity(NOTIFICATION_RETENTION_JOB)</span>
+<span class="fc" id="L104">                .withDescription(&quot;Deletes SENT/FAILED notification_outbox rows older than retentionDays&quot;)</span>
+<span class="fc" id="L105">                .usingJobData(NotificationRetentionJob.RETENTION_DAYS, retentionDays)</span>
+<span class="fc" id="L106">                .storeDurably()</span>
+<span class="fc" id="L107">                .build();</span>
+    }
+
+    @Bean
+    public CronTrigger notificationRetentionDailyTrigger(@Qualifier(&quot;notificationRetentionJobDetail&quot;) JobDetail job) {
+<span class="fc" id="L112">        return TriggerBuilder.newTrigger()</span>
+<span class="fc" id="L113">                .forJob(job.getKey())</span>
+<span class="fc" id="L114">                .withIdentity(NOTIFICATION_RETENTION_DAILY)</span>
+<span class="fc" id="L115">                .withDescription(&quot;Daily cleanup&quot;)</span>
+<span class="fc" id="L116">                .withSchedule(CronScheduleBuilder.cronSchedule(retentionCron)</span>
+<span class="fc" id="L117">                        .inTimeZone(timeZone)</span>
+
+<span class="fc" id="L119">                        .withMisfireHandlingInstructionDoNothing())</span>
+<span class="fc" id="L120">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -10,8 +10,8 @@ package com.bricklayers.chatservice.service;
 
 import com.bricklayers.chatservice.dto.ChatEventResponse;
 import com.bricklayers.chatservice.entity.ChatEventType;
+import com.bricklayers.chatservice.service.relay.ChatEventRelay;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class ChatEventPublisher {
 
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ChatEventRelay eventRelay;
 
     public void publish(ChatEventType type, String chatId, String threadId, String userId, Object payload) {
         ChatEventResponse event = new ChatEventResponse(
@@ -30,6 +30,6 @@ public class ChatEventPublisher {
                 ? "/topic/chats/" + chatId
                 : "/topic/chats/" + chatId + "/threads/" + threadId;
 
-        messagingTemplate.convertAndSend(destination, event);
+        eventRelay.relay(destination, event);
     }
 }

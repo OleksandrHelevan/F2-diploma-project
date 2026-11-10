@@ -3,6 +3,7 @@ package com.bricklayers.userservice.service.impl;
 import com.bricklayers.userservice.annotation.AuditAdminAction;
 import com.bricklayers.userservice.annotation.ForbidSelfTarget;
 import com.bricklayers.userservice.annotation.RequireKeycloakLink;
+import com.bricklayers.userservice.cache.UserProfileCache;
 import com.bricklayers.userservice.dto.CreateUserRequest;
 import com.bricklayers.userservice.dto.SetPasswordRequest;
 import com.bricklayers.userservice.dto.UpdateUserRequest;
@@ -16,6 +17,7 @@ import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient.Keyc
 import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient.KeycloakRole;
 import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient.KeycloakUserRepresentation;
 import com.bricklayers.userservice.mapper.UserMapper;
+import com.bricklayers.userservice.notification.NotificationPublisher;
 import com.bricklayers.userservice.repository.UserRepository;
 import com.bricklayers.userservice.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final KeycloakAdminClient keycloakAdminClient;
+    private final UserProfileCache profileCache;
+    private final NotificationPublisher notificationPublisher;
 
     @Override
     @AuditAdminAction("USER_CREATE")
@@ -75,6 +79,8 @@ public class UserServiceImpl implements UserService {
             user.setKeycloakId(keycloakId);
             user.setActive(true);
             User saved = userRepository.saveAndFlush(user);
+
+            notificationPublisher.welcome(saved);
             return userMapper.toDto(saved);
         } catch (RuntimeException exception) {
             deleteKeycloakUserAfterFailure(keycloakId, accessToken, exception);
@@ -85,15 +91,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserDto getById(UUID id) {
-        return userMapper.toDto(findUserOrThrow(id));
+        return profileCache.byId(id, () -> userMapper.toDto(findUserOrThrow(id)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public UserDto getByKeycloakId(String keycloakId) {
-        User user = userRepository.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new UserNotFoundException("user.not.found", keycloakId));
-        return userMapper.toDto(user);
+        return profileCache.byKeycloakId(keycloakId, () -> userMapper.toDto(userRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new UserNotFoundException("user.not.found", keycloakId))));
     }
 
     @Override
@@ -104,6 +109,32 @@ public class UserServiceImpl implements UserService {
         return userRepository
                 .findAll(pageable)
                 .map(userMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserDto> getColleagues(UUID currentUserId, Role role) {
+        User current = findUserOrThrow(currentUserId);
+        if (current.getCompanyId() == null) {
+            return List.of();
+        }
+        return userRepository.findAllByCompanyIdAndActiveTrueOrderByUsername(current.getCompanyId()).stream()
+                .filter(user -> !user.getId().equals(currentUserId))
+                .filter(user -> role == null || user.getRole() == role)
+                .map(userMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDto getColleague(UUID currentUserId, UUID colleagueId) {
+        User current = findUserOrThrow(currentUserId);
+        User colleague = findUserOrThrow(colleagueId);
+
+        if (current.getCompanyId() == null || !current.getCompanyId().equals(colleague.getCompanyId())) {
+            throw new UserNotFoundException("user.not.found", colleagueId);
+        }
+        return userMapper.toDto(colleague);
     }
 
     @Override
@@ -121,6 +152,7 @@ public class UserServiceImpl implements UserService {
         Role previousRole = user.getRole();
         userMapper.updateEntityFromRequest(request, user);
         User saved = userRepository.saveAndFlush(user);
+        profileCache.evict(saved.getId(), saved.getKeycloakId());
         String accessToken = keycloakAdminClient.getAccessToken();
         keycloakAdminClient.updateUser(
                 user.getKeycloakId(),
@@ -142,6 +174,7 @@ public class UserServiceImpl implements UserService {
                     keycloakAdminClient.getRealmRole(user.getRole().name(), accessToken),
                     accessToken);
         }
+        notificationPublisher.accountChanged(saved, previousRole);
         return userMapper.toDto(saved);
     }
 
@@ -154,14 +187,9 @@ public class UserServiceImpl implements UserService {
             keycloakAdminClient.deleteUser(user.getKeycloakId(), keycloakAdminClient.getAccessToken());
         }
         userRepository.delete(user);
+        profileCache.evict(user.getId(), user.getKeycloakId());
     }
 
-    /**
-     * Lab 4 (AOP), deliberate self-invocation: {@code this.delete(id)} bypasses the Spring proxy,
-     * so neither {@link ForbidSelfTarget} nor {@link AuditAdminAction} on {@link #delete(UUID)} runs
-     * here. An administrator can delete their own account through this path, and no audit record
-     * is written, without any error. Calling {@code delete(id)} on the injected bean is guarded.
-     */
     @Override
     public void deleteAll(List<UUID> ids) {
         ids.forEach(this::delete);

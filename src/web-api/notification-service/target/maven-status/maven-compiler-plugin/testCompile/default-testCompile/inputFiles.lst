@@ -1,0 +1,9 @@
+D:\F2-diploma-project\src\web-api\notification-service\src\test\java\com\bricklayers\notificationservice\async\AsyncProcessingTest.java
+D:\F2-diploma-project\src\web-api\notification-service\src\test\java\com\bricklayers\notificationservice\async\ExecutorSaturationTest.java
+D:\F2-diploma-project\src\web-api\notification-service\src\test\java\com\bricklayers\notificationservice\config\SecurityConfigTest.java
+D:\F2-diploma-project\src\web-api\notification-service\src\test\java\com\bricklayers\notificationservice\notification\NotificationTemplatesTest.java
+D:\F2-diploma-project\src\web-api\notification-service\src\test\java\com\bricklayers\notificationservice\scheduling\QuartzJobsConfigTest.java
+D:\F2-diploma-project\src\web-api\notification-service\src\test\java\com\bricklayers\notificationservice\scheduling\QuartzJobsTest.java
+D:\F2-diploma-project\src\web-api\notification-service\src\test\java\com\bricklayers\notificationservice\scheduling\QuartzPersistenceIT.java
+D:\F2-diploma-project\src\web-api\notification-service\src\test\java\com\bricklayers\notificationservice\scheduling\QuartzSchedulerBehaviourTest.java
+D:\F2-diploma-project\src\web-api\notification-service\src\test\java\com\bricklayers\notificationservice\scheduling\QuartzTestSupport.java

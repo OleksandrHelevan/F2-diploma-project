@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="uk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationDelivery.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.bricklayers.notificationservice.notification</a> &gt; <span class="el_source">NotificationDelivery.java</span></div><h1>NotificationDelivery.java</h1><pre class="source lang-java linenums">package com.bricklayers.notificationservice.notification;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+import java.util.UUID;
+
+<span class="fc" id="L11">@Slf4j</span>
+@Service
+@RequiredArgsConstructor
+public class NotificationDelivery {
+
+    private final NotificationOutboxRepository repository;
+    private final MailGateway mailGateway;
+
+    @Transactional
+    public DeliveryResult deliver(UUID notificationId, int maxAttempts) {
+<span class="fc" id="L21">        Optional&lt;NotificationOutbox&gt; claimed = repository.lockPending(notificationId);</span>
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">        if (claimed.isEmpty()) {</span>
+<span class="nc" id="L23">            return new DeliveryResult(notificationId, DeliveryResult.Outcome.SKIPPED, 0, null);</span>
+        }
+<span class="fc" id="L25">        NotificationOutbox notification = claimed.get();</span>
+        try {
+<span class="fc" id="L27">            mailGateway.send(notification.getRecipient(), notification.getSubject(), notification.getBody());</span>
+<span class="fc" id="L28">            notification.markSent();</span>
+<span class="fc" id="L29">            log.info(&quot;Notification {} ({}) sent to {} on {}&quot;, notificationId, notification.getType(),</span>
+<span class="fc" id="L30">                    notification.getRecipient(), Thread.currentThread().getName());</span>
+<span class="fc" id="L31">            return new DeliveryResult(notificationId, DeliveryResult.Outcome.SENT, notification.getAttempts(), null);</span>
+<span class="fc" id="L32">        } catch (RuntimeException exception) {</span>
+<span class="fc" id="L33">            notification.recordFailure(exception, maxAttempts);</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">            DeliveryResult.Outcome outcome = notification.getStatus() == NotificationStatus.FAILED</span>
+<span class="nc" id="L35">                    ? DeliveryResult.Outcome.GAVE_UP</span>
+<span class="fc" id="L36">                    : DeliveryResult.Outcome.RETRY_LATER;</span>
+<span class="fc" id="L37">            log.warn(&quot;Notification {} attempt {}/{} failed: {}&quot;, notificationId, notification.getAttempts(),</span>
+<span class="fc" id="L38">                    maxAttempts, notification.getLastError());</span>
+<span class="fc" id="L39">            return new DeliveryResult(notificationId, outcome, notification.getAttempts(), notification.getLastError());</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

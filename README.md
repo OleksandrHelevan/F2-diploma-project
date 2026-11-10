@@ -1,119 +1,124 @@
-# DVO-L4-3C8B52
-# Bricklayers — Kubernetes (лабораторна №3)
+# Bricklayers
 
-У каталозі [`k8s/`](./k8s/) розміщено окремі маніфести для розгортання Bricklayers у namespace `bricklayers`: web-app, три API-сервіси, PostgreSQL, MongoDB, Keycloak, Swagger UI, ConfigMap, Secret і PVC. Власні образи використовують незмінні версійні теги, не `latest`.
+Платформа для будівельних бригад: керування користувачами (Keycloak + `user-service`), робочий чат
+(`chat-service`, WebSocket/STOMP), e-mail сповіщення (`notification-service`), маркетплейс матеріалів
+(`market-service`) і веб-клієнт (`web-app`, React).
 
-## Вимоги
+**Стек:** Java 21, Spring Boot 4.1, PostgreSQL 16, MongoDB Atlas, Redis 7.4, Keycloak 25, HAProxy 3.0, Quartz 2.5,
+Mailpit, React 19 + Vite, k6, Testcontainers, Docker Compose.
 
-- Docker Desktop із запущеним Docker Engine, Minikube з драйвером Docker, kubectl.
-- PowerShell із кореня репозиторію.
-- Для доступу до Keycloak із браузера використовується port-forward `localhost:8084`; web-app відкривається через NodePort.
+## Швидкий запуск
 
-## Підготовка та встановлення
-
-```powershell
-minikube start --driver=docker
-minikube status
-kubectl get nodes
-kubectl get pods -n kube-system
-minikube addons enable metrics-server
-minikube addons enable ingress
-```
-
-Зберіть і завантажте локальні образи в Minikube з двома конкретними тегами. Для змістовного оновлення внесіть невелику зміну застосунку між збірками:
+Потрібні Docker Desktop (Linux containers) і Compose v2. У `src/.env` має бути `MONGO_URI` (MongoDB Atlas),
+решта значень — див. [`src/.env.example`](src/.env.example).
 
 ```powershell
-.\scripts\build-k8s-images.ps1 -Tag 1.0.0
-# Після зміни коду:
-.\scripts\build-k8s-images.ps1 -Tag 1.1.0
+cd src
+docker compose up -d --build --wait
 ```
 
-`k8s/11-secret.yaml` містить лише демонстраційні placeholders. Для локального тестового середовища їх можна використати як є; для робочого середовища створюйте/оновлюйте Secret зі сховища секретів і ніколи не записуйте справжні паролі в Git.
+| Адреса | Що це |
+|---|---|
+| http://localhost:3000 | Веб-клієнт: вхід через Keycloak → чат (SUPERADMIN → керування користувачами) |
+| http://localhost:8080 | HAProxy — єдина точка входу до `user-service` і `chat-service` |
+| http://localhost:8080/user-service/swagger-ui.html | Swagger `user-service` (через балансувальник, **Authorize** → Keycloak) |
+| http://localhost:8080/chat-service/swagger-ui.html | Swagger `chat-service` |
+| http://localhost:8085 | Swagger для OIDC / Admin API Keycloak |
+| http://localhost:8025 | Mailpit: листи, які надсилає `notification-service` (Lab 5) |
+| `localhost:5435` | PostgreSQL `notifications_db`: outbox листів і таблиці Quartz (Lab 6) |
+| http://localhost:8404 | Статистика HAProxy: стан кожної репліки (тільки з localhost) |
+| http://localhost:8084 | Keycloak (`admin` / `admin`) |
+| `localhost:6379` | Redis (кеш профілів, події чату) — IDE / `redis-cli` |
+| `docker compose ps user-service chat-service notification-service` | Прямі порти кожної репліки (Docker призначає вільні, змінюються при перестворенні) |
 
-Однією командою створіть namespace та всі об'єкти:
+Прямий доступ до реплік і Redis відкриває [`src/docker-compose.override.yml`](src/docker-compose.override.yml) —
+Compose підхоплює його автоматично. Щоб показати інкапсуляцію з Lab 3 (клієнт бачить лише балансувальник),
+запустіть без нього: `docker compose -f docker-compose.yml up -d`.
+
+Тестові користувачі realm `bricklayers` (одна компанія): `foreman/foreman` (прораб), `worker/worker`
+(будівельник), `supplier/supplier` (постачальник), `superadmin/superadmin`. Профілі потрапляють у
+`user-service` через синхронізацію з Keycloak приблизно через 10 с після старту.
+
+> Realm імпортується лише при створенні контейнера Keycloak. Після змін у
+> [`bricklayers-realm.json`](src/keycloak/bricklayers-realm.json) перестворіть його:
+> `docker compose up -d --force-recreate keycloak`. Новий Keycloak видає користувачам нові id; якщо в
+> `users_db` лишились старі профілі, синхронізація пропустить їх як конфлікт — тоді очистіть том
+> `users_db_data` (`docker compose down` + `docker volume rm users_db_data`).
+
+## Архітектура
+
+```mermaid
+flowchart LR
+    B[Браузер] -->|:3000| W[web-app nginx]
+    W -->|/api, /ws| LB[HAProxy :8080]
+    W -->|/api/v1/products| M[market-service]
+    LB --> U1[user-service #1]
+    LB --> U2[user-service #2]
+    LB --> C1[chat-service #1]
+    LB --> C2[chat-service #2]
+    U1 & U2 --> PG[(PostgreSQL users_db)]
+    U1 & U2 --> R[(Redis: кеш профілів)]
+    C1 & C2 <-->|pub/sub подій| R
+    C1 & C2 --> MG[(MongoDB Atlas)]
+    C1 & C2 -->|профілі, через LB| LB
+    U1 & U2 --> KC[Keycloak]
+    U1 & U2 -->|async, POST /api/v1/notifications| N[notification-service x2]
+    N --> NDB[(PostgreSQL notifications_db<br/>outbox + Quartz)]
+    N -->|SMTP, async| MP[Mailpit]
+    B -->|OIDC| KC
+```
+
+## Лабораторні роботи з високонавантажених систем
+
+| Лаба | Що зроблено | Звіт |
+|---|---|---|
+| 2. Stateless | Аудит стану; WebSocket-події через Redis pub/sub; ShedLock для планувальника; `STATELESS`; `X-Instance-ID`; репліки з одного образу | [docs/lab2-stateless.md](docs/lab2-stateless.md) |
+| 3. Horizontal Scaling | HAProxy з DNS-виявленням реплік, `GET /health`, активні health checks, round robin / least connections / IP hash, k6-експерименти | [docs/lab3-horizontal-scaling.md](docs/lab3-horizontal-scaling.md) |
+| 4. Distributed Caching | Cache-Aside профілів у Redis, `X-Cache`, інвалідація після commit, TTL з jitter, fallback і circuit breaker | [docs/lab4-distributed-caching.md](docs/lab4-distributed-caching.md) |
+| 5. Async | Окремий `notification-service`; обмежені `ThreadPoolTaskExecutor` в обох сервісах; листи fire-and-forget (передача після commit + outbox); огляд акаунта з двох `@Async` + `thenCombine`; тайм-аути, `AsyncUncaughtExceptionHandler`, 503 при переповненні | [docs/lab5-async.md](docs/lab5-async.md) |
+| 6. Quartz | `notification-service`: JDBC job store у кластері, схема `QRTZ_*` через Liquibase; 2 завдання (повтор / очищення листів) / 3 тригери, JobDataMap з пріоритетом тригера, misfire, часовий пояс, ідемпотентність, обмежені повтори | [docs/lab6-quartz.md](docs/lab6-quartz.md) |
+
+Демонстраційні скрипти (PowerShell 5.1 / 7, запуск із `src`):
 
 ```powershell
-kubectl apply -f .\k8s\
-kubectl get all,pvc,configmap,secret -n bricklayers
-kubectl rollout status deployment/web-app -n bricklayers
+.\scripts\demo-stateless.ps1 -SimulateFailure     # Lab 2
+docker compose run --rm --no-deps --entrypoint k6 load run /scripts/chat-relay.js   # Lab 2, чат
+.\scripts\run-lab3.ps1 -Scenario all              # Lab 3
+.\scripts\demo-cache.ps1 -SimulateFailure         # Lab 4
+.\scripts\demo-async.ps1 -SimulateMailOutage       # Lab 5 (+ Quartz-повтор листа)
+.\scripts\demo-quartz.ps1 -ChangeDefinition        # Lab 6
 ```
 
-Відкрийте web-app і Keycloak у двох PowerShell вікнах. Port-forward на 3000 узгоджується з redirect URL тестового realm:
+## Структура
+
+```
+src/
+  docker-compose.yml     усі сервіси, репліки, HAProxy, Redis, k6 (profile tools)
+  infra/haproxy.cfg      балансувальник
+  keycloak/              realm, тема логіну, OpenAPI Keycloak
+  load-tests/            k6: scaling.js (Lab 3), chat-relay.js (Lab 2)
+  scripts/               демонстраційні скрипти лаб
+  web-api/
+    common/              спільні DTO (UserInfo, NotificationRequest), X-Instance-ID, lab3-фільтр затримки
+    user-service/        користувачі, адмінка, аудит, синхронізація з Keycloak, кеш профілів,
+                         огляд акаунта (@Async), передача листів у notification-service
+    chat-service/        чати, повідомлення, WebSocket, Redis-ретрансляція подій
+    notification-service/ e-mail: outbox, async SMTP, Quartz (повтор і очищення)
+    market-service/      каталог матеріалів
+  web-app/               React-клієнт
+docs/                    звіти лабораторних
+```
+
+## Тести
+
+Покриття кожного модуля (крім `market-service`) перевіряє JaCoCo на фазі `verify`: збірка падає, якщо покриття
+рядків або інструкцій нижче 60 % (`jacoco.minimum.coverage` у [src/web-api/pom.xml](src/web-api/pom.xml)).
+Звіт: `<модуль>/target/site/jacoco/index.html`.
 
 ```powershell
-kubectl -n bricklayers port-forward svc/web-app 3000:3000
-kubectl -n bricklayers port-forward svc/keycloak 8084:8080
+cd src\web-api
+mvn test -pl common,user-service,chat-service,notification-service -am
+mvn verify -pl common,user-service,chat-service,notification-service -am   # + *IT (Testcontainers, потрібен Docker) і JaCoCo check
+cd ..\web-app
+npm run lint; npm run build
 ```
-
-Перейдіть на `http://localhost:3000`; Keycloak доступний на `http://localhost:8084`. Service `web-app` також має тип NodePort (`30080`), Swagger UI — NodePort `30085`.
-
-## ConfigMap і Secret
-
-`bricklayers-config` зберігає назви баз даних і користувача PostgreSQL, JDBC URL, URL сервісів Keycloak, issuer/JWK URL, Mongo database name, внутрішню адресу user-service та параметр chat demo.
-
-`bricklayers-secrets` має ключі `postgres-password`, `keycloak-admin-user`, `keycloak-admin-password`, `mongodb-uri`. Значення у файлі — тільки локальні заглушки. Не виводьте значення Secret у скриншоти/логи; для підтвердження перевіряйте наявність ключів або змінні всередині контейнера без друку чутливих значень:
-
-```powershell
-kubectl describe secret bricklayers-secrets -n bricklayers
-kubectl exec -n bricklayers deploy/user-service -- sh -c 'test -n "$SPRING_DATASOURCE_PASSWORD" && echo SPRING_DATASOURCE_PASSWORD=set'
-kubectl exec -n bricklayers deploy/chat-service -- printenv SPRING_DATA_MONGODB_NAME
-```
-
-## Життєвий цикл
-
-Самовідновлення:
-
-```powershell
-$old = kubectl get pods -n bricklayers -l app.kubernetes.io/name=web-app -o jsonpath='{.items[0].metadata.name}'
-kubectl delete pod $old -n bricklayers
-kubectl get pods -n bricklayers -l app.kubernetes.io/name=web-app -w
-```
-
-Масштабування та перевірка ReplicaSet/endpoint:
-
-```powershell
-kubectl scale deployment/web-app -n bricklayers --replicas=3
-kubectl get pods -n bricklayers -l app.kubernetes.io/name=web-app -o wide
-kubectl get endpoints web-app -n bricklayers
-```
-
-Rolling update, доступність, історія та відкат:
-
-```powershell
-kubectl set image deployment/web-app -n bricklayers web-app=bricklayers/web-app:1.1.0
-kubectl rollout status deployment/web-app -n bricklayers
-kubectl rollout history deployment/web-app -n bricklayers
-kubectl rollout undo deployment/web-app -n bricklayers
-kubectl rollout history deployment/web-app -n bricklayers
-```
-
-Щоб показати, що web лишався доступним під час rolling update, відкрийте web-app URL і в окремому вікні повторюйте HTTP-запит під час `kubectl rollout status`; зафіксуйте відповіді та поди.
-
-## Діагностика образу
-
-```powershell
-kubectl set image deployment/web-app -n bricklayers web-app=bricklayers/web-app:does-not-exist
-kubectl get pods -n bricklayers -w
-kubectl describe pod <pod-name> -n bricklayers
-kubectl get events -n bricklayers --sort-by=.lastTimestamp
-kubectl logs deployment/web-app -n bricklayers
-kubectl exec -it deployment/web-app -n bricklayers -- sh
-kubectl set image deployment/web-app -n bricklayers web-app=bricklayers/web-app:1.0.0
-kubectl rollout status deployment/web-app -n bricklayers
-```
-
-Після завершення лабораторної:
-
-```powershell
-kubectl delete namespace bricklayers
-```
-
-Namespace видаляє також його PVC та тестові дані. Не виконуйте команду, якщо дані потрібно зберегти.
-
-## Звіт
-
-Файл [`docs/lab3-report.docx`](./docs/lab3-report.docx) містить окремий звіт, команди PowerShell/kubectl, пояснення очікуваного результату та поле доказу для кожного з 31 підпунктів лабораторної. Невиконані через недоступність Docker Engine кластерні кроки чітко позначено; плейсхолдери доказів потрібно замінити фактичними результатами та скриншотами перед здачею. Маніфести зберігають вимагані кафедрою мітку `mascot: гарбуз` і annotation `devops-lab/mascot-approved: "true"`.
-
-## Подяки
-
-Автор дякує гарбузу за натхнення.

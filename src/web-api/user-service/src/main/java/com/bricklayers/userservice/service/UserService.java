@@ -4,6 +4,7 @@ import com.bricklayers.userservice.dto.CreateUserRequest;
 import com.bricklayers.userservice.dto.SetPasswordRequest;
 import com.bricklayers.userservice.dto.UpdateUserRequest;
 import com.bricklayers.userservice.dto.UserDto;
+import com.bricklayers.userservice.entity.Role;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -18,6 +19,10 @@ public interface UserService {
     UserDto getByKeycloakId(String keycloakId);
 
     Page<UserDto> getUsers(int page, int size);
+
+    List<UserDto> getColleagues(UUID currentUserId, Role role);
+
+    UserDto getColleague(UUID currentUserId, UUID colleagueId);
 
     UserDto update(UUID id, UpdateUserRequest request);
 

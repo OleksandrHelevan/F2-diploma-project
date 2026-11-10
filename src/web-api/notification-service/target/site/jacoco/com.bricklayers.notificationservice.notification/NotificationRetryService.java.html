@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="uk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationRetryService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.bricklayers.notificationservice.notification</a> &gt; <span class="el_source">NotificationRetryService.java</span></div><h1>NotificationRetryService.java</h1><pre class="source lang-java linenums">package com.bricklayers.notificationservice.notification;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+<span class="fc" id="L15">@Slf4j</span>
+@Service
+@RequiredArgsConstructor
+public class NotificationRetryService {
+
+    private final NotificationOutboxRepository repository;
+    private final NotificationDelivery delivery;
+
+    public RetrySummary retryPending(int batchSize, int maxAttempts, Duration minAge) {
+
+<span class="nc" id="L25">        LocalDateTime createdBefore = LocalDateTime.now().minus(minAge);</span>
+<span class="nc" id="L26">        List&lt;UUID&gt; ids = repository.findIdsByStatusCreatedBefore(</span>
+<span class="nc" id="L27">                NotificationStatus.PENDING, createdBefore, PageRequest.of(0, batchSize));</span>
+
+<span class="nc" id="L29">        Map&lt;DeliveryResult.Outcome, Integer&gt; outcomes = new EnumMap&lt;&gt;(DeliveryResult.Outcome.class);</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        for (UUID id : ids) {</span>
+<span class="nc" id="L31">            outcomes.merge(delivery.deliver(id, maxAttempts).outcome(), 1, Integer::sum);</span>
+<span class="nc" id="L32">        }</span>
+<span class="nc" id="L33">        RetrySummary summary = new RetrySummary(ids.size(),</span>
+<span class="nc" id="L34">                outcomes.getOrDefault(DeliveryResult.Outcome.SENT, 0),</span>
+<span class="nc" id="L35">                outcomes.getOrDefault(DeliveryResult.Outcome.RETRY_LATER, 0),</span>
+<span class="nc" id="L36">                outcomes.getOrDefault(DeliveryResult.Outcome.GAVE_UP, 0),</span>
+<span class="nc" id="L37">                outcomes.getOrDefault(DeliveryResult.Outcome.SKIPPED, 0));</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (summary.picked() &gt; 0) {</span>
+<span class="nc" id="L39">            log.info(&quot;Notification retry: {}&quot;, summary);</span>
+        }
+<span class="nc" id="L41">        return summary;</span>
+    }
+
+<span class="fc" id="L44">    public record RetrySummary(int picked, int sent, int retryLater, int gaveUp, int skipped) {</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

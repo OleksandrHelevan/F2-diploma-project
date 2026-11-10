@@ -20,7 +20,7 @@ import java.util.List;
 public class OpenApiConfig {
 
     static {
-        // @CurrentUserId is resolved from the JWT, not sent by the client
+
         SpringDocUtils.getConfig().addAnnotationsToIgnore(CurrentUserId.class);
     }
 

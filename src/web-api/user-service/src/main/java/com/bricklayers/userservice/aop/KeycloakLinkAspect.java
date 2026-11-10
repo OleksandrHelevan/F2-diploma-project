@@ -10,11 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * Operations that must be mirrored to Keycloak (profile update, password reset) cannot run
- * for a local profile without a Keycloak account. An unknown user is left to the method itself,
- * which reports it as 404.
- */
 @Aspect
 @Component
 @Order(KeycloakLinkAspect.ORDER)
