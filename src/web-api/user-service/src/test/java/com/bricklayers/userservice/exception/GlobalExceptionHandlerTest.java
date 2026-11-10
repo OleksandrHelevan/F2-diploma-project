@@ -34,6 +34,30 @@ class GlobalExceptionHandlerTest {
         LocaleContextHolder.setLocale(Locale.ENGLISH);
     }
 
+
+    @Test
+    void databaseUnavailable_onRead_returns503() {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/users");
+
+        ResponseEntity<ErrorResponse> response = handler.handleDatabaseUnavailable(
+                new org.springframework.dao.DataAccessResourceFailureException("Connection refused"), request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(response.getHeaders().getFirst("Retry-After")).isEqualTo("2");
+        assertThat(response.getBody().message()).isEqualTo("The database is temporarily unavailable, please retry in a few seconds");
+    }
+
+    @Test
+    void databaseUnavailable_onWrite_reportsReadOnlyMode() {
+        MockHttpServletRequest request = new MockHttpServletRequest("PUT", "/api/v1/admin/users/42");
+
+        ResponseEntity<ErrorResponse> response = handler.handleDatabaseUnavailable(
+                new org.springframework.transaction.CannotCreateTransactionException("primary down"), request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(response.getBody().message()).startsWith("The service is in read-only mode");
+    }
+
     @Test
     void handleTaskRejected_returnsServiceUnavailableWithRetryAfter() {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/admin/users/42/overview");

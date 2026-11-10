@@ -1,0 +1,163 @@
+﻿
+== baseline-a : scenario a (2 x user-service (1 CPU each), PostgreSQL 2 CPU, Redis cache on, single primary)
+  environment: USER_SERVICE_REPLICAS=2 USER_SERVICE_CPUS=1 USERS_DB_CPUS=2 DB_POOL_SIZE=10 CACHE_ENABLED=true DB_REPLICA_ENABLED=false READ_YOUR_WRITES_TTL=5s REPLICA_APPLY_DELAY=0
+  time="2026-11-10T20:44:16Z" level=info msg="teardown: deleted 5/5 load users" source=console
+  scenario-a-read: Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)  [2 x user-service (1 CPU each), PostgreSQL 2 CPU, Redis cache on, single primary]
+  | VUs | Throughput (RPS) | Avg ms | p50 ms | p95 ms | p99 ms | Max ms | Error % |
+  |---:|---:|---:|---:|---:|---:|---:|---:|
+  | 10 | 207.9 | 47.8 | 11.5 | 102.5 | 192.9 | 1378.6 | 0.00 |
+  | 25 | 267.0 | 93.6 | 92.7 | 208.1 | 312.2 | 699.4 | 0.00 |
+  | 50 | 286.9 | 174.7 | 104.2 | 499.2 | 775.3 | 1369.7 | 0.00 |
+  | 100 | 306.7 | 328.4 | 106.8 | 1221.6 | 1897.2 | 22798.4 | 0.01 |
+  | 200 | 322.5 | 641.6 | 302.1 | 2508.7 | 4774.0 | 8500.8 | 1.62 |
+  hottest containers (docker stats, 100% = one core):
+    bricklayers-keycloak                     max  457,2%  p90   20,3%
+    bricklayers-notification-service-1       max  148,9%  p90    6,2%
+    bricklayers-user-service-2               max  112,9%  p90  108,7%
+    bricklayers-user-service-3               max  111,4%  p90  107,6%
+    bricklayers-load-run-62b9d5451cdc        max     95%  p90     44%
+  postgres-users           commits    53529  rows returned     853820
+  postgres-users-replica   commits       52  rows returned        873
+
+== baseline-b : scenario b (2 x user-service (1 CPU each), PostgreSQL 2 CPU, Redis cache on, single primary)
+  environment: USER_SERVICE_REPLICAS=2 USER_SERVICE_CPUS=1 USERS_DB_CPUS=2 DB_POOL_SIZE=10 CACHE_ENABLED=true DB_REPLICA_ENABLED=false READ_YOUR_WRITES_TTL=5s REPLICA_APPLY_DELAY=0
+  time="2026-11-10T20:48:44Z" level=info msg="teardown: deleted 20/20 load users" source=console
+  scenario-b-write: Write-intensive: profile updates (PostgreSQL row update + audit + Keycloak Admin API + e-mail hand-off)  [2 x user-service (1 CPU each), PostgreSQL 2 CPU, Redis cache on, single primary]
+  | VUs | Throughput (RPS) | Avg ms | p50 ms | p95 ms | p99 ms | Max ms | Error % |
+  |---:|---:|---:|---:|---:|---:|---:|---:|
+  | 10 | 35.9 | 277.0 | 241.6 | 602.6 | 908.3 | 1206.6 | 0.00 |
+  | 25 | 57.6 | 435.7 | 386.0 | 1075.6 | 1549.3 | 2062.7 | 0.00 |
+  | 50 | 73.9 | 682.1 | 502.3 | 1845.0 | 2444.4 | 3496.6 | 0.00 |
+  | 100 | 82.6 | 1239.4 | 824.2 | 3672.7 | 4496.5 | 7483.8 | 0.36 |
+  | 200 | 90.1 | 2333.0 | 1695.0 | 6259.0 | 7309.1 | 9180.4 | 14.10 |
+  hottest containers (docker stats, 100% = one core):
+    bricklayers-keycloak                     max  622,4%  p90  416,7%
+    bricklayers-notification-service-1       max  374,5%  p90  146,8%
+    bricklayers-notification-service-2       max  310,5%  p90    150%
+    bricklayers-user-service-2               max  109,3%  p90  107,7%
+    bricklayers-user-service-3               max    107%  p90    106%
+  postgres-users           commits    38195  rows returned     505070
+  postgres-users-replica   commits       48  rows returned        813
+
+== baseline-c : scenario c (2 x user-service (1 CPU each), PostgreSQL 2 CPU, Redis cache on, single primary)
+  environment: USER_SERVICE_REPLICAS=2 USER_SERVICE_CPUS=1 USERS_DB_CPUS=2 DB_POOL_SIZE=10 CACHE_ENABLED=true DB_REPLICA_ENABLED=false READ_YOUR_WRITES_TTL=5s REPLICA_APPLY_DELAY=0
+  time="2026-11-10T20:53:05Z" level=info msg="teardown: deleted 20/20 load users" source=console
+  scenario-c-workflow: Complex workflow: list -> account overview (Keycloak + audit, parallel) -> update -> read own write  [2 x user-service (1 CPU each), PostgreSQL 2 CPU, Redis cache on, single primary]
+  | VUs | Throughput (RPS) | Avg ms | p50 ms | p95 ms | p99 ms | Max ms | Error % |
+  |---:|---:|---:|---:|---:|---:|---:|---:|
+  | 10 | 143.2 | 69.6 | 39.8 | 229.7 | 308.5 | 569.3 | 0.00 |
+  | 25 | 176.7 | 139.8 | 61.2 | 616.6 | 795.2 | 1008.9 | 0.00 |
+  | 50 | 202.9 | 249.1 | 84.7 | 1105.6 | 1776.6 | 5704.0 | 6.64 |
+  | 100 | 224.3 | 451.3 | 189.6 | 1832.1 | 3159.9 | 7930.7 | 10.98 |
+  | 200 | 222.1 | 924.9 | 580.5 | 3140.3 | 4800.0 | 8553.8 | 27.33 |
+  hottest containers (docker stats, 100% = one core):
+    bricklayers-notification-service-1       max  583,2%  p90     79%
+    bricklayers-keycloak                     max  459,1%  p90  311,8%
+    bricklayers-notification-service-2       max  111,7%  p90   62,8%
+    bricklayers-user-service-3               max  111,1%  p90  105,8%
+    bricklayers-user-service-2               max  109,7%  p90  106,7%
+  postgres-users           commits    65081  rows returned    2237341
+  postgres-users-replica   commits       48  rows returned        813
+
+== scaling-1-instance : scenario a (1 x user-service (1 CPU))
+  environment: USER_SERVICE_REPLICAS=1 USER_SERVICE_CPUS=1 USERS_DB_CPUS=2 DB_POOL_SIZE=10 CACHE_ENABLED=true DB_REPLICA_ENABLED=false READ_YOUR_WRITES_TTL=5s REPLICA_APPLY_DELAY=0
+  time="2026-11-10T20:57:34Z" level=info msg="teardown: deleted 5/5 load users" source=console
+  scenario-a-read: Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)  [1 x user-service (1 CPU)]
+  | VUs | Throughput (RPS) | Avg ms | p50 ms | p95 ms | p99 ms | Max ms | Error % |
+  |---:|---:|---:|---:|---:|---:|---:|---:|
+  | 10 | 388.8 | 25.5 | 5.3 | 89.0 | 94.2 | 197.7 | 0.00 |
+  | 25 | 526.5 | 47.4 | 12.6 | 99.9 | 162.5 | 297.9 | 0.00 |
+  | 50 | 493.8 | 101.4 | 98.0 | 202.8 | 297.0 | 501.9 | 0.00 |
+  | 100 | 431.3 | 233.5 | 198.9 | 509.8 | 899.5 | 2077.0 | 0.00 |
+  | 200 | 371.2 | 549.9 | 370.5 | 1708.8 | 2695.8 | 5699.1 | 0.19 |
+  hottest containers (docker stats, 100% = one core):
+    bricklayers-user-service-2               max  115,3%  p90  109,2%
+    bricklayers-load-run-a25de58f51cd        max   60,3%  p90   43,8%
+    bricklayers-chat-service-2               max   55,8%  p90    5,2%
+    bricklayers-keycloak                     max     47%  p90    2,4%
+    bricklayers-lb-1                         max   35,5%  p90   26,9%
+  postgres-users           commits    73488  rows returned    1296649
+  postgres-users-replica   commits       48  rows returned        813
+
+== scaling-2-instances : scenario a (2 x user-service (1 CPU each))
+  environment: USER_SERVICE_REPLICAS=2 USER_SERVICE_CPUS=1 USERS_DB_CPUS=2 DB_POOL_SIZE=10 CACHE_ENABLED=true DB_REPLICA_ENABLED=false READ_YOUR_WRITES_TTL=5s REPLICA_APPLY_DELAY=0
+  time="2026-11-10T21:03:14Z" level=info msg="teardown: deleted 5/5 load users" source=console
+  scenario-a-read: Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)  [2 x user-service (1 CPU each)]
+  | VUs | Throughput (RPS) | Avg ms | p50 ms | p95 ms | p99 ms | Max ms | Error % |
+  |---:|---:|---:|---:|---:|---:|---:|---:|
+  | 10 | 151.6 | 65.8 | 11.9 | 193.1 | 276.0 | 393.9 | 0.00 |
+  | 25 | 297.5 | 83.8 | 20.8 | 264.7 | 301.9 | 584.9 | 0.00 |
+  | 50 | 311.9 | 160.7 | 75.4 | 503.3 | 789.6 | 1418.0 | 0.00 |
+  | 100 | 321.2 | 314.4 | 87.1 | 1288.7 | 1907.5 | 3394.4 | 0.00 |
+  | 200 | 233.7 | 902.7 | 123.6 | 2896.7 | 14526.2 | 30002.5 | 2.31 |
+  hottest containers (docker stats, 100% = one core):
+    bricklayers-keycloak                     max  179,8%  p90      4%
+    bricklayers-load-run-a32dfb33f3fd        max    133%  p90   34,7%
+    bricklayers-user-service-3               max  110,6%  p90  107,7%
+    bricklayers-chat-service-2               max  105,8%  p90   12,1%
+    bricklayers-user-service-2               max     86%  p90   58,1%
+  postgres-users           commits    48860  rows returned     784478
+  postgres-users-replica   commits       51  rows returned        858
+
+== scaling-3-instances : scenario a (3 x user-service (1 CPU each))
+  environment: USER_SERVICE_REPLICAS=3 USER_SERVICE_CPUS=1 USERS_DB_CPUS=2 DB_POOL_SIZE=10 CACHE_ENABLED=true DB_REPLICA_ENABLED=false READ_YOUR_WRITES_TTL=5s REPLICA_APPLY_DELAY=0
+  time="2026-11-10T21:07:53Z" level=info msg="teardown: deleted 5/5 load users" source=console
+  scenario-a-read: Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)  [3 x user-service (1 CPU each)]
+  | VUs | Throughput (RPS) | Avg ms | p50 ms | p95 ms | p99 ms | Max ms | Error % |
+  |---:|---:|---:|---:|---:|---:|---:|---:|
+  | 10 | 702.7 | 14.1 | 3.0 | 82.3 | 86.7 | 886.3 | 0.00 |
+  | 25 | 1092.2 | 22.8 | 3.6 | 92.6 | 102.7 | 914.7 | 0.00 |
+  | 50 | 1478.1 | 33.7 | 4.8 | 123.6 | 192.9 | 481.4 | 0.00 |
+  | 100 | 1662.1 | 60.4 | 5.6 | 260.5 | 303.3 | 692.2 | 0.00 |
+  | 200 | 1407.4 | 142.6 | 5.4 | 773.2 | 1388.1 | 3801.2 | 0.00 |
+  hottest containers (docker stats, 100% = one core):
+    bricklayers-user-service-4               max  112,1%  p90    110%
+    bricklayers-user-service-3               max  105,8%  p90  100,9%
+    bricklayers-user-service-2               max   85,7%  p90   81,4%
+    bricklayers-load-run-d27f3aee20b7        max   74,9%  p90   62,2%
+    bricklayers-chat-service-2               max   52,8%  p90    4,5%
+  postgres-users           commits   163260  rows returned    3105747
+  postgres-users-replica   commits       47  rows returned        798
+
+== caching-disabled : scenario a (Redis cache disabled)
+  environment: USER_SERVICE_REPLICAS=2 USER_SERVICE_CPUS=1 USERS_DB_CPUS=2 DB_POOL_SIZE=10 CACHE_ENABLED=false DB_REPLICA_ENABLED=false READ_YOUR_WRITES_TTL=5s REPLICA_APPLY_DELAY=0
+  time="2026-11-10T21:12:26Z" level=info msg="teardown: deleted 5/5 load users" source=console
+  scenario-a-read: Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)  [Redis cache disabled]
+  | VUs | Throughput (RPS) | Avg ms | p50 ms | p95 ms | p99 ms | Max ms | Error % |
+  |---:|---:|---:|---:|---:|---:|---:|---:|
+  | 10 | 476.7 | 20.9 | 3.9 | 87.2 | 91.8 | 600.3 | 0.00 |
+  | 25 | 720.5 | 34.7 | 4.3 | 98.9 | 189.4 | 296.2 | 0.00 |
+  | 50 | 867.3 | 57.7 | 7.0 | 195.4 | 292.8 | 586.6 | 0.00 |
+  | 100 | 937.3 | 107.2 | 9.2 | 402.8 | 696.7 | 1599.7 | 0.00 |
+  | 200 | 1032.7 | 195.3 | 9.7 | 896.2 | 1505.1 | 4781.1 | 0.00 |
+  hottest containers (docker stats, 100% = one core):
+    bricklayers-notification-service-1       max  368,9%  p90    2,1%
+    bricklayers-keycloak                     max  127,6%  p90    1,2%
+    bricklayers-user-service-3               max  111,8%  p90  108,6%
+    bricklayers-user-service-4               max  110,1%  p90  105,9%
+    bricklayers-load-run-f9fb504803d7        max   49,2%  p90   44,1%
+  postgres-users           commits   282277  rows returned    3765239
+  postgres-users-replica   commits       47  rows returned        798
+
+== caching-enabled : scenario a (Redis cache enabled, warmed up)
+  environment: USER_SERVICE_REPLICAS=2 USER_SERVICE_CPUS=1 USERS_DB_CPUS=2 DB_POOL_SIZE=10 CACHE_ENABLED=true DB_REPLICA_ENABLED=false READ_YOUR_WRITES_TTL=5s REPLICA_APPLY_DELAY=0
+  time="2026-11-10T21:16:59Z" level=info msg="teardown: deleted 5/5 load users" source=console
+  scenario-a-read: Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)  [Redis cache enabled, warmed up]
+  | VUs | Throughput (RPS) | Avg ms | p50 ms | p95 ms | p99 ms | Max ms | Error % |
+  |---:|---:|---:|---:|---:|---:|---:|---:|
+  | 10 | 529.1 | 18.7 | 3.5 | 86.8 | 91.5 | 100.6 | 0.00 |
+  | 25 | 717.8 | 34.7 | 4.4 | 99.4 | 188.7 | 593.8 | 0.00 |
+  | 50 | 975.7 | 51.2 | 6.7 | 189.5 | 203.4 | 398.1 | 0.00 |
+  | 100 | 1144.8 | 87.3 | 20.2 | 288.1 | 394.3 | 1689.2 | 0.00 |
+  | 200 | 1060.6 | 189.3 | 11.4 | 794.9 | 1391.4 | 3284.4 | 0.00 |
+  hottest containers (docker stats, 100% = one core):
+    bricklayers-chat-service-2               max  164,8%  p90      5%
+    bricklayers-user-service-4               max  112,4%  p90  108,3%
+    bricklayers-load-run-58b6dfea02f1        max  110,6%  p90   48,6%
+    bricklayers-user-service-3               max  109,3%  p90    104%
+    bricklayers-keycloak                     max   53,8%  p90    1,8%
+  postgres-users           commits   118192  rows returned    2203819
+  postgres-users-replica   commits       48  rows returned        813
+
+== replication-single-primary : scenario a (single primary (0.3 CPU))
+  environment: USER_SERVICE_REPLICAS=2 USER_SERVICE_CPUS=4 USERS_DB_CPUS=0.3 DB_POOL_SIZE=10 CACHE_ENABLED=true DB_REPLICA_ENABLED=false READ_YOUR_WRITES_TTL=5s REPLICA_APPLY_DELAY=0

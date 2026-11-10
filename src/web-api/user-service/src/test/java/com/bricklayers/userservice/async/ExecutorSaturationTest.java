@@ -105,6 +105,7 @@ class ExecutorSaturationTest {
     @Test
     void tinyPool_rejectsTheThirdTask() {
         userServiceAsyncExecutor.execute(this::blockOnService);
+        awaitWorkerBusy();
         userServiceAsyncExecutor.execute(this::blockOnService);
 
         assertThatThrownBy(() -> userServiceAsyncExecutor.execute(this::blockOnService))
@@ -120,6 +121,8 @@ class ExecutorSaturationTest {
         }).when(notificationClient).send(any(NotificationRequest.class), eq(1));
 
         notificationPublisher.welcome(user);
+
+        awaitWorkerBusy();
         notificationPublisher.welcome(user);
         UUID third = notificationPublisher.welcome(user);
 
@@ -137,6 +140,7 @@ class ExecutorSaturationTest {
         doThrow(new ResourceAccessException("notification-service down"))
                 .when(notificationClient).send(any(NotificationRequest.class), eq(1));
         notificationPublisher.welcome(user);
+        awaitWorkerBusy();
         notificationPublisher.welcome(user);
 
         assertThatCode(() -> notificationPublisher.welcome(user)).doesNotThrowAnyException();
@@ -145,10 +149,16 @@ class ExecutorSaturationTest {
     @Test
     void overview_whenPoolIsFull_failsFastWithTaskRejected_whichTheApiMapsTo503() {
         userServiceAsyncExecutor.execute(this::blockOnService);
+        awaitWorkerBusy();
         userServiceAsyncExecutor.execute(this::blockOnService);
 
         assertThatThrownBy(() -> overviewService.overview(user.getId()))
                 .isInstanceOf(TaskRejectedException.class);
+    }
+
+    private void awaitWorkerBusy() {
+        await().atMost(Duration.ofSeconds(3)).until(() -> userServiceAsyncExecutor.getActiveCount() == 1
+                && userServiceAsyncExecutor.getThreadPoolExecutor().getQueue().isEmpty());
     }
 
     private void blockOnService() {

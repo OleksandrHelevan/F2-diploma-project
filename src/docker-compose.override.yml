@@ -26,3 +26,7 @@ services:
   notifications-db:
     ports:
       - "${NOTIFICATIONS_DB_PORT:-5435}:5432"
+
+  postgres-users-replica:
+    ports:
+      - "${USERS_DB_REPLICA_PORT:-5436}:5432"

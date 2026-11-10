@@ -1,0 +1,42 @@
+﻿
+== 1. Topology (GET /api/v1/admin/db/replication)
+  topology: primary+1-replica
+  primary : wal sender to 172.18.0.14/32 state=streaming sync=async sent=0/6292618 replay=0/6292618 lag=0 B
+  replica : in_recovery=True replay_lsn=0/6292618
+  ok  asynchronous streaming replication is running
+
+== 2. Write on the primary, read the row on the replica
+  replica: SELECT last_name FROM users WHERE username = 'repl-target-223626' -> 'Initial'
+  ok  the INSERT made on the primary is on the replica
+  GET  /api/v1/users                                      -> 200  X-DB-Route=primary,replica-1  785,7 ms  reader warms the profile cache
+
+== 3. Replication lag: replica applies WAL 3s late
+  replica restarted with recovery_min_apply_delay = 3s
+  PUT  /api/v1/admin/users/6300399a-66d4-4edf-a84b-d46bae2ac6be -> 200  X-DB-Route=replica-1,primary   1154 ms  admin writes lastName=Lag223626
+  GET  /api/v1/users                                      -> 200  X-DB-Route=replica-1         256,2 ms  another user (eventual read): lastName=Initial
+  ok  STALE READ: the replica still returns the old value
+  GET  /api/v1/admin/users?page=0&size=100                -> 200  X-DB-Route=primary-sticky    344,2 ms  the writer (sticky): lastName=Lag223626
+  ok  READ-YOUR-WRITES: the writer is routed to the primary and sees the change
+  replication status right after the write: lag_bytes=26768 replica replay_lsn=0/629F7A8
+  GET  /api/v1/users                                      -> 200  X-DB-Route=replica-1         619,1 ms  after the delay: lastName=Lag223626
+  ok  eventually consistent: the replica caught up
+  replica restarted with recovery_min_apply_delay = 0
+
+== 4. docker stop bricklayers-users-db-replica : reads fall back to the primary
+  GET  /api/v1/users                                      -> 200  X-DB-Route=primary-fallback 1259,5 ms  
+  ok  eventual read served by the primary (Primary Fallback), no error
+  /health: {"primary":"UP","replica-1":"DOWN","status":"DEGRADED"}
+  PUT  /api/v1/admin/users/6300399a-66d4-4edf-a84b-d46bae2ac6be -> 200  X-DB-Route=primary-fallback,primary  636,8 ms  writes are unaffected
+  GET  /api/v1/users                                      -> 200  X-DB-Route=replica-1         246,4 ms  replica is back
+
+== 5. docker stop bricklayers-users-db : read-only mode
+  /health: {"primary":"DOWN","replica-1":"UP","status":"READ_ONLY"}
+  PUT  /api/v1/admin/users/6300399a-66d4-4edf-a84b-d46bae2ac6be -> 503  X-DB-Route=replica-1,primary 1248,4 ms  message: Сервіс у режимі лише читання: зміни тимчасово недоступні, повторіть пізніше
+  ok  writes are rejected with 503 (read-only mode), not 500
+  GET  /api/v1/users                                      -> 200  X-DB-Route=replica-1         332,6 ms  non-critical read from the replica
+  ok  eventual reads stay available from the replica
+  GET  /api/v1/admin/users/6300399a-66d4-4edf-a84b-d46bae2ac6be -> 503  X-DB-Route=primary-explicit   56,4 ms  strict read (@ReadFromPrimary)
+  primary is back, replica reconnected
+  cleanup: DELETE repl-target-223626 -> 204
+  cleanup: DELETE repl-reader-223626 -> 204
+

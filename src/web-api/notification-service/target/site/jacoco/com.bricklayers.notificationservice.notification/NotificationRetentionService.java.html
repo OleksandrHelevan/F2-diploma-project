@@ -20,20 +20,20 @@ public class NotificationRetentionService {
 
     @Transactional
     public int purgeExpired(int retentionDays, Instant asOf) {
-<span class="nc bnc" id="L23" title="All 2 branches missed.">        if (retentionDays &lt; 1) {</span>
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        if (retentionDays &lt; 1) {</span>
 <span class="nc" id="L24">            throw new IllegalArgumentException(&quot;retentionDays must be at least 1, got &quot; + retentionDays);</span>
         }
-<span class="nc" id="L26">        LocalDateTime cutoff = cutoff(retentionDays, asOf);</span>
-<span class="nc" id="L27">        int deleted = repository.deleteByStatusInCreatedBefore(</span>
-<span class="nc" id="L28">                EnumSet.of(NotificationStatus.SENT, NotificationStatus.FAILED), cutoff);</span>
-<span class="nc" id="L29">        log.info(&quot;Notification retention: deleted {} finished notification(s) created before {}&quot;, deleted, cutoff);</span>
-<span class="nc" id="L30">        return deleted;</span>
+<span class="fc" id="L26">        LocalDateTime cutoff = cutoff(retentionDays, asOf);</span>
+<span class="fc" id="L27">        int deleted = repository.deleteByStatusInCreatedBefore(</span>
+<span class="fc" id="L28">                EnumSet.of(NotificationStatus.SENT, NotificationStatus.FAILED), cutoff);</span>
+<span class="fc" id="L29">        log.info(&quot;Notification retention: deleted {} finished notification(s) created before {}&quot;, deleted, cutoff);</span>
+<span class="fc" id="L30">        return deleted;</span>
     }
 
     static LocalDateTime cutoff(int retentionDays, Instant asOf) {
-<span class="nc" id="L34">        return LocalDateTime.ofInstant(asOf, ZoneId.systemDefault())</span>
-<span class="nc" id="L35">                .truncatedTo(ChronoUnit.DAYS)</span>
-<span class="nc" id="L36">                .minusDays(retentionDays);</span>
+<span class="fc" id="L34">        return LocalDateTime.ofInstant(asOf, ZoneId.systemDefault())</span>
+<span class="fc" id="L35">                .truncatedTo(ChronoUnit.DAYS)</span>
+<span class="fc" id="L36">                .minusDays(retentionDays);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

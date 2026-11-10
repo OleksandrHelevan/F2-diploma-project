@@ -1,0 +1,80 @@
+{
+  "scenario": "scenario-a-read",
+  "description": "Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)",
+  "run": "baseline-a",
+  "environment": "2 x user-service (1 CPU each), PostgreSQL 2 CPU, Redis cache on, single primary",
+  "stageSeconds": 30,
+  "warmupSeconds": 60,
+  "rows": [
+    {
+      "vus": 10,
+      "requests": 6237,
+      "rps": 207.9,
+      "iterationsPerSecond": 69.3,
+      "avgMs": 47.81287119015553,
+      "p50Ms": 11.509561,
+      "p95Ms": 102.53961399999999,
+      "p99Ms": 192.8803433200001,
+      "maxMs": 1378.623664,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 25,
+      "requests": 8010,
+      "rps": 267,
+      "iterationsPerSecond": 89,
+      "avgMs": 93.60876723645447,
+      "p50Ms": 92.717534,
+      "p95Ms": 208.09299179999996,
+      "p99Ms": 312.2319121799999,
+      "maxMs": 699.387871,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 50,
+      "requests": 8607,
+      "rps": 286.9,
+      "iterationsPerSecond": 95.63333333333334,
+      "avgMs": 174.65482732322596,
+      "p50Ms": 104.19753,
+      "p95Ms": 499.164922,
+      "p99Ms": 775.2738496800004,
+      "maxMs": 1369.717539,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 100,
+      "requests": 9201,
+      "rps": 306.7,
+      "iterationsPerSecond": 102.23333333333333,
+      "avgMs": 328.4370067435064,
+      "p50Ms": 106.795432,
+      "p95Ms": 1221.615463,
+      "p99Ms": 1897.192682,
+      "maxMs": 22798.413968,
+      "errorRate": 0.00010868383871318335,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 200,
+      "requests": 9675,
+      "rps": 322.5,
+      "iterationsPerSecond": 107.5,
+      "avgMs": 641.6464730686258,
+      "p50Ms": 302.122178,
+      "p95Ms": 2508.7250821999933,
+      "p99Ms": 4774.010841960004,
+      "maxMs": 8500.761681,
+      "errorRate": 0.016227390180878553,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    }
+  ]
+}

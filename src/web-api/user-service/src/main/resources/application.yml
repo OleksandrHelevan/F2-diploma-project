@@ -48,6 +48,17 @@ server:
 
 app:
   instance-id: ${INSTANCE_ID:${HOSTNAME:}}
+  datasource:
+    read-your-writes-ttl: ${READ_YOUR_WRITES_TTL:5s}
+    replica:
+      enabled: ${DB_REPLICA_ENABLED:false}
+      # One or more comma-separated JDBC URLs; eventual reads are spread round-robin over the healthy ones.
+      url: ${DB_REPLICA_URL:jdbc:postgresql://localhost:5436/users_db}
+      username: ${DB_REPLICA_USERNAME:${spring.datasource.username}}
+      password: ${DB_REPLICA_PASSWORD:${spring.datasource.password}}
+      probe-interval-ms: 2000
+      pool-size: ${DB_REPLICA_POOL_SIZE:10}
+      application-name: ${INSTANCE_ID:${HOSTNAME:user-service}}-replica
   cache:
     enabled: ${CACHE_ENABLED:false}
     ttl-seconds: ${CACHE_TTL_SECONDS:300}

@@ -25,7 +25,8 @@ docker compose up -d --build --wait
 | http://localhost:8080/chat-service/swagger-ui.html | Swagger `chat-service` |
 | http://localhost:8085 | Swagger для OIDC / Admin API Keycloak |
 | http://localhost:8025 | Mailpit: листи, які надсилає `notification-service` (Lab 5) |
-| `localhost:5435` | PostgreSQL `notifications_db`: outbox листів і таблиці Quartz (Lab 6) |
+| `localhost:5435` | PostgreSQL `notifications_db`: outbox листів і таблиці Quartz |
+| `localhost:5433` / `localhost:5436` | PostgreSQL `users_db`: Primary / Replica (hot standby, лише читання) |
 | http://localhost:8404 | Статистика HAProxy: стан кожної репліки (тільки з localhost) |
 | http://localhost:8084 | Keycloak (`admin` / `admin`) |
 | `localhost:6379` | Redis (кеш профілів, події чату) — IDE / `redis-cli` |
@@ -56,7 +57,9 @@ flowchart LR
     LB --> U2[user-service #2]
     LB --> C1[chat-service #1]
     LB --> C2[chat-service #2]
-    U1 & U2 --> PG[(PostgreSQL users_db)]
+    U1 & U2 -->|запис, строгі читання| PG[(users_db Primary)]
+    U1 & U2 -->|eventual читання| PGR[(users_db Replica)]
+    PG -->|WAL streaming, async| PGR
     U1 & U2 --> R[(Redis: кеш профілів)]
     C1 & C2 <-->|pub/sub подій| R
     C1 & C2 --> MG[(MongoDB Atlas)]
@@ -75,8 +78,10 @@ flowchart LR
 | 2. Stateless | Аудит стану; WebSocket-події через Redis pub/sub; ShedLock для планувальника; `STATELESS`; `X-Instance-ID`; репліки з одного образу | [docs/lab2-stateless.md](docs/lab2-stateless.md) |
 | 3. Horizontal Scaling | HAProxy з DNS-виявленням реплік, `GET /health`, активні health checks, round robin / least connections / IP hash, k6-експерименти | [docs/lab3-horizontal-scaling.md](docs/lab3-horizontal-scaling.md) |
 | 4. Distributed Caching | Cache-Aside профілів у Redis, `X-Cache`, інвалідація після commit, TTL з jitter, fallback і circuit breaker | [docs/lab4-distributed-caching.md](docs/lab4-distributed-caching.md) |
-| 5. Async | Окремий `notification-service`; обмежені `ThreadPoolTaskExecutor` в обох сервісах; листи fire-and-forget (передача після commit + outbox); огляд акаунта з двох `@Async` + `thenCombine`; тайм-аути, `AsyncUncaughtExceptionHandler`, 503 при переповненні | [docs/lab5-async.md](docs/lab5-async.md) |
-| 6. Quartz | `notification-service`: JDBC job store у кластері, схема `QRTZ_*` через Liquibase; 2 завдання (повтор / очищення листів) / 3 тригери, JobDataMap з пріоритетом тригера, misfire, часовий пояс, ідемпотентність, обмежені повтори | [docs/lab6-quartz.md](docs/lab6-quartz.md) |
+| 5. Load & Performance Baseline | k6-сценарії A/B/C зі ступенями 10→200 VU і розігрівом, специфікація середовища, `docker stats`, точка насичення й вузькі місця, 1 vs N інстансів, кеш вимк./увімк. | [docs/lab5-load-baseline.md](docs/lab5-load-baseline.md) |
+| 6. Database Replication | Primary + hot-standby Replica `users_db`, `ReadWriteRoutingDataSource`, класифікація читань, sticky read-your-writes, fallback і read-only режим, порівняння 1 вузол / +1 / +2 репліки | [docs/lab6-replication.md](docs/lab6-replication.md) |
+| Async (`@Async`) | Окремий `notification-service`; обмежені `ThreadPoolTaskExecutor` в обох сервісах; листи fire-and-forget (передача після commit + outbox); огляд акаунта з двох `@Async` + `thenCombine`; тайм-аути, `AsyncUncaughtExceptionHandler`, 503 при переповненні | [docs/lab5-async.md](docs/lab5-async.md) |
+| Quartz Scheduler | `notification-service`: JDBC job store у кластері, схема `QRTZ_*` через Liquibase; 2 завдання (повтор / очищення листів) / 3 тригери, JobDataMap з пріоритетом тригера, misfire, часовий пояс, ідемпотентність, обмежені повтори | [docs/lab6-quartz.md](docs/lab6-quartz.md) |
 
 Демонстраційні скрипти (PowerShell 5.1 / 7, запуск із `src`):
 
@@ -85,8 +90,10 @@ flowchart LR
 docker compose run --rm --no-deps --entrypoint k6 load run /scripts/chat-relay.js   # Lab 2, чат
 .\scripts\run-lab3.ps1 -Scenario all              # Lab 3
 .\scripts\demo-cache.ps1 -SimulateFailure         # Lab 4
-.\scripts\demo-async.ps1 -SimulateMailOutage       # Lab 5 (+ Quartz-повтор листа)
-.\scripts\demo-quartz.ps1 -ChangeDefinition        # Lab 6
+.\scripts\demo-async.ps1 -SimulateMailOutage       # Async (+ Quartz-повтор листа)
+.\scripts\demo-quartz.ps1 -ChangeDefinition        # Quartz
+.\scripts\run-load-baseline.ps1 -Experiment all     # Lab 5 (+ порівняння топологій Lab 6), ~1 год
+.\scripts\demo-replication.ps1                     # Lab 6: реплікація, stale read, sticky, відмови вузлів
 ```
 
 ## Структура

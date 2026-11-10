@@ -1,0 +1,80 @@
+{
+  "scenario": "scenario-a-read",
+  "description": "Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)",
+  "run": "scaling-3-instances",
+  "environment": "3 x user-service (1 CPU each)",
+  "stageSeconds": 30,
+  "warmupSeconds": 20,
+  "rows": [
+    {
+      "vus": 10,
+      "requests": 12279,
+      "rps": 409.3,
+      "iterationsPerSecond": 136.43333333333334,
+      "avgMs": 24.18045520783456,
+      "p50Ms": 5.209611,
+      "p95Ms": 91.8738987,
+      "p99Ms": 103.25186799999996,
+      "maxMs": 298.203121,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 25,
+      "requests": 19191,
+      "rps": 639.7,
+      "iterationsPerSecond": 213.23333333333332,
+      "avgMs": 38.862631760148005,
+      "p50Ms": 5.431396,
+      "p95Ms": 182.64545550000003,
+      "p99Ms": 200.70735789999998,
+      "maxMs": 596.372723,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 50,
+      "requests": 23379,
+      "rps": 779.3,
+      "iterationsPerSecond": 259.76666666666665,
+      "avgMs": 64.10664985127704,
+      "p50Ms": 6.228319,
+      "p95Ms": 281.8606559,
+      "p99Ms": 384.96691332,
+      "maxMs": 685.9662,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 100,
+      "requests": 21165,
+      "rps": 705.5,
+      "iterationsPerSecond": 235.16666666666666,
+      "avgMs": 142.78299222329352,
+      "p50Ms": 6.910899,
+      "p95Ms": 697.2307258,
+      "p99Ms": 1181.9776878800005,
+      "maxMs": 2477.624941,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 200,
+      "requests": 20010,
+      "rps": 667,
+      "iterationsPerSecond": 222.33333333333334,
+      "avgMs": 303.08519591159455,
+      "p50Ms": 7.6442945,
+      "p95Ms": 1609.9037835999998,
+      "p99Ms": 2761.5857623799984,
+      "maxMs": 6688.373466,
+      "errorRate": 0.0017491254372813594,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    }
+  ]
+}

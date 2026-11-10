@@ -1,0 +1,24 @@
+{
+  "scenario": "scenario-a-read",
+  "description": "Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)",
+  "run": "smoke-a-read",
+  "environment": "",
+  "stageSeconds": 5,
+  "warmupSeconds": 3,
+  "rows": [
+    {
+      "vus": 5,
+      "requests": 3720,
+      "rps": 744,
+      "iterationsPerSecond": 248,
+      "avgMs": 6.52889688763441,
+      "p50Ms": 5.842874500000001,
+      "p95Ms": 10.970424849999999,
+      "p99Ms": 20.729077569999998,
+      "maxMs": 67.595186,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    }
+  ]
+}

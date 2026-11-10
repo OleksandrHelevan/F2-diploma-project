@@ -1,0 +1,80 @@
+{
+  "scenario": "scenario-b-write",
+  "description": "Write-intensive: profile updates (PostgreSQL row update + audit + Keycloak Admin API + e-mail hand-off)",
+  "run": "baseline-b",
+  "environment": "2 x user-service (1 CPU each), PostgreSQL 2 CPU, Redis cache on, single primary",
+  "stageSeconds": 30,
+  "warmupSeconds": 60,
+  "rows": [
+    {
+      "vus": 10,
+      "requests": 1078,
+      "rps": 35.93333333333333,
+      "iterationsPerSecond": 35.93333333333333,
+      "avgMs": 277.0359114870128,
+      "p50Ms": 241.59995099999998,
+      "p95Ms": 602.63103755,
+      "p99Ms": 908.2564892700001,
+      "maxMs": 1206.617973,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 25,
+      "requests": 1729,
+      "rps": 57.63333333333333,
+      "iterationsPerSecond": 57.63333333333333,
+      "avgMs": 435.74111949739665,
+      "p50Ms": 385.982352,
+      "p95Ms": 1075.6255491999998,
+      "p99Ms": 1549.3013166800013,
+      "maxMs": 2062.716436,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 50,
+      "requests": 2217,
+      "rps": 73.9,
+      "iterationsPerSecond": 73.9,
+      "avgMs": 682.0616428254388,
+      "p50Ms": 502.335009,
+      "p95Ms": 1844.9632467999995,
+      "p99Ms": 2444.413044800002,
+      "maxMs": 3496.572267,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 100,
+      "requests": 2478,
+      "rps": 82.6,
+      "iterationsPerSecond": 82.6,
+      "avgMs": 1239.3756753163852,
+      "p50Ms": 824.2355695,
+      "p95Ms": 3672.734813000001,
+      "p99Ms": 4496.49508404,
+      "maxMs": 7483.833353,
+      "errorRate": 0.0036319612590799033,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 200,
+      "requests": 2702,
+      "rps": 90.06666666666666,
+      "iterationsPerSecond": 90.06666666666666,
+      "avgMs": 2333.0207201495205,
+      "p50Ms": 1695.0487225,
+      "p95Ms": 6258.9647491999995,
+      "p99Ms": 7309.115132579949,
+      "maxMs": 9180.4119,
+      "errorRate": 0.14100666173205034,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    }
+  ]
+}

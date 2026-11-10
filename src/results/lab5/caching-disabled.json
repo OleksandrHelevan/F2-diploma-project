@@ -1,0 +1,80 @@
+{
+  "scenario": "scenario-a-read",
+  "description": "Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)",
+  "run": "caching-disabled",
+  "environment": "Redis cache disabled",
+  "stageSeconds": 30,
+  "warmupSeconds": 60,
+  "rows": [
+    {
+      "vus": 10,
+      "requests": 14301,
+      "rps": 476.7,
+      "iterationsPerSecond": 158.9,
+      "avgMs": 20.860391930774043,
+      "p50Ms": 3.949961,
+      "p95Ms": 87.161008,
+      "p99Ms": 91.812692,
+      "maxMs": 600.344216,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 25,
+      "requests": 21615,
+      "rps": 720.5,
+      "iterationsPerSecond": 240.16666666666666,
+      "avgMs": 34.67615050196621,
+      "p50Ms": 4.343974,
+      "p95Ms": 98.8760065,
+      "p99Ms": 189.38087130000002,
+      "maxMs": 296.232275,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 50,
+      "requests": 26019,
+      "rps": 867.3,
+      "iterationsPerSecond": 289.1,
+      "avgMs": 57.69560327353137,
+      "p50Ms": 7.049622,
+      "p95Ms": 195.3942756,
+      "p99Ms": 292.80711999999994,
+      "maxMs": 586.591343,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 100,
+      "requests": 28119,
+      "rps": 937.3,
+      "iterationsPerSecond": 312.43333333333334,
+      "avgMs": 107.16232274995619,
+      "p50Ms": 9.167102,
+      "p95Ms": 402.79812089999996,
+      "p99Ms": 696.6979733000001,
+      "maxMs": 1599.657684,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 200,
+      "requests": 30981,
+      "rps": 1032.7,
+      "iterationsPerSecond": 344.23333333333335,
+      "avgMs": 195.33022285500724,
+      "p50Ms": 9.731354,
+      "p95Ms": 896.229127,
+      "p99Ms": 1505.084231000001,
+      "maxMs": 4781.057625,
+      "errorRate": 0.00003227784771311449,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "scenario": "scenario-b-write",
+  "description": "Write-intensive: profile updates (PostgreSQL row update + audit + Keycloak Admin API + e-mail hand-off)",
+  "run": "smoke-b-write",
+  "environment": "",
+  "stageSeconds": 5,
+  "warmupSeconds": 3,
+  "rows": [
+    {
+      "vus": 5,
+      "requests": 379,
+      "rps": 75.8,
+      "iterationsPerSecond": 75.8,
+      "avgMs": 65.99438173087071,
+      "p50Ms": 62.282656,
+      "p95Ms": 105.84690149999997,
+      "p99Ms": 134.7152561399999,
+      "maxMs": 169.422488,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    }
+  ]
+}

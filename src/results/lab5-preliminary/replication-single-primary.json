@@ -1,0 +1,80 @@
+{
+  "scenario": "scenario-a-read",
+  "description": "Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)",
+  "run": "replication-single-primary",
+  "environment": "single primary (0.5 CPU), cache off",
+  "stageSeconds": 30,
+  "warmupSeconds": 20,
+  "rows": [
+    {
+      "vus": 10,
+      "requests": 20886,
+      "rps": 696.2,
+      "iterationsPerSecond": 232.06666666666666,
+      "avgMs": 14.180620073637922,
+      "p50Ms": 4.4311385,
+      "p95Ms": 72.28904825000001,
+      "p99Ms": 79.57232360000019,
+      "maxMs": 269.215237,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 25,
+      "requests": 23385,
+      "rps": 779.5,
+      "iterationsPerSecond": 259.8333333333333,
+      "avgMs": 31.904155209835356,
+      "p50Ms": 6.755119,
+      "p95Ms": 93.8205042,
+      "p99Ms": 99.5580876,
+      "maxMs": 192.729593,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 50,
+      "requests": 24804,
+      "rps": 826.8,
+      "iterationsPerSecond": 275.6,
+      "avgMs": 60.47042525782157,
+      "p50Ms": 83.70404450000001,
+      "p95Ms": 119.50243764999948,
+      "p99Ms": 197.28506687000004,
+      "maxMs": 396.668557,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 100,
+      "requests": 24507,
+      "rps": 816.9,
+      "iterationsPerSecond": 272.3,
+      "avgMs": 122.59834178581559,
+      "p50Ms": 99.55575,
+      "p95Ms": 299.5151411,
+      "p99Ms": 459.76390164,
+      "maxMs": 988.720001,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 200,
+      "requests": 23544,
+      "rps": 784.8,
+      "iterationsPerSecond": 261.6,
+      "avgMs": 258.6651732700889,
+      "p50Ms": 194.8446605,
+      "p95Ms": 793.4967156499999,
+      "p99Ms": 1195.7125793499997,
+      "maxMs": 3090.14557,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    }
+  ]
+}

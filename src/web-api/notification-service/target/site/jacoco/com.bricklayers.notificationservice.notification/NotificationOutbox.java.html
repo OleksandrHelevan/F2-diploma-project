@@ -80,7 +80,7 @@ public class NotificationOutbox {
 <span class="fc" id="L80">        attempts++;</span>
 <span class="fc" id="L81">        String message = failure.getClass().getSimpleName() + &quot;: &quot; + failure.getMessage();</span>
 <span class="pc bpc" id="L82" title="1 of 2 branches missed.">        lastError = message.length() &gt; MAX_ERROR_LENGTH ? message.substring(0, MAX_ERROR_LENGTH) : message;</span>
-<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        status = attempts &gt;= maxAttempts ? NotificationStatus.FAILED : NotificationStatus.PENDING;</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        status = attempts &gt;= maxAttempts ? NotificationStatus.FAILED : NotificationStatus.PENDING;</span>
 <span class="fc" id="L84">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

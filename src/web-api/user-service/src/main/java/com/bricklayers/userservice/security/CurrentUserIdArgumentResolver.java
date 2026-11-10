@@ -2,6 +2,7 @@ package com.bricklayers.userservice.security;
 
 import com.bricklayers.userservice.annotation.CurrentUserId;
 import com.bricklayers.userservice.cache.UserProfileCache;
+import com.bricklayers.userservice.db.ReadRoutingContext;
 import com.bricklayers.userservice.mapper.UserMapper;
 import com.bricklayers.userservice.repository.UserRepository;
 import com.bricklayers.userservice.exception.UserNotFoundException;
@@ -52,10 +53,11 @@ public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResol
             throw new AuthenticationCredentialsNotFoundException("Користувач не автентифікований");
         }
         String keycloakId = jwtAuthentication.getToken().getSubject();
-        return profileCache.byKeycloakId(keycloakId, () -> userRepository.findByKeycloakId(keycloakId)
-                .map(userMapper::toDto)
-                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException(
-                        "Authenticated Keycloak user is not linked to a local profile")))
+        return profileCache.byKeycloakId(keycloakId, () -> ReadRoutingContext.onPrimary(() ->
+                        userRepository.findByKeycloakId(keycloakId)
+                                .map(userMapper::toDto)
+                                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException(
+                                        "Authenticated Keycloak user is not linked to a local profile"))))
                 .id();
     }
 }

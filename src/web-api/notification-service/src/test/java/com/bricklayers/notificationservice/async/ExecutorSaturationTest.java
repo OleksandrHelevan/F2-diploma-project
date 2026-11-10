@@ -91,6 +91,7 @@ class ExecutorSaturationTest {
     @Test
     void tinyPool_rejectsTheThirdTask() {
         notificationAsyncExecutor.execute(this::blockOnSmtp);
+        awaitWorkerBusy();
         notificationAsyncExecutor.execute(this::blockOnSmtp);
 
         assertThatThrownBy(() -> notificationAsyncExecutor.execute(this::blockOnSmtp))
@@ -100,6 +101,7 @@ class ExecutorSaturationTest {
     @Test
     void rejectedTask_staysPendingForTheRetryJob_andTheRequestIsStillAccepted() {
         notificationService.accept(request());
+        awaitWorkerBusy();
         notificationService.accept(request());
 
         assertThatCode(() -> notificationService.accept(request())).doesNotThrowAnyException();
@@ -115,6 +117,11 @@ class ExecutorSaturationTest {
     private static NotificationRequest request() {
         return new NotificationRequest(UUID.randomUUID(), NotificationType.WELCOME, "worker@example.com",
                 Map.of("username", "worker"));
+    }
+
+    private void awaitWorkerBusy() {
+        await().atMost(Duration.ofSeconds(3)).until(() -> notificationAsyncExecutor.getActiveCount() == 1
+                && notificationAsyncExecutor.getThreadPoolExecutor().getQueue().isEmpty());
     }
 
     private void blockOnSmtp() {

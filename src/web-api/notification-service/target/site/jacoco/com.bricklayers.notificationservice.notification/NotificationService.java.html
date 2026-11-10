@@ -38,12 +38,12 @@ public class NotificationService {
     }
 
     private void dispatchAfterCommit(UUID id) {
-<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (TransactionSynchronizationManager.isSynchronizationActive()) {</span>
-<span class="nc" id="L42">            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (TransactionSynchronizationManager.isSynchronizationActive()) {</span>
+<span class="fc" id="L42">            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {</span>
                 @Override
                 public void afterCommit() {
-<span class="nc" id="L45">                    dispatchOrLeavePending(id);</span>
-<span class="nc" id="L46">                }</span>
+<span class="fc" id="L45">                    dispatchOrLeavePending(id);</span>
+<span class="fc" id="L46">                }</span>
             });
         } else {
 <span class="fc" id="L49">            dispatchOrLeavePending(id);</span>

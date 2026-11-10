@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-add-admin-audit-log-target-index
+      author: bricklayers
+      comment: >
+        Lab 5 bottleneck: the account overview counts and lists audit records by target. Without this index
+        every call was a sequential scan of admin_audit_log.
+      changes:
+        - createIndex:
+            tableName: admin_audit_log
+            indexName: idx_admin_audit_log_target_created_at
+            columns:
+              - column:
+                  name: target
+              - column:
+                  name: created_at

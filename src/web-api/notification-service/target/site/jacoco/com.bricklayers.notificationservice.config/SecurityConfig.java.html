@@ -16,31 +16,31 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-<span class="nc" id="L19">public class SecurityConfig {</span>
+<span class="fc" id="L19">public class SecurityConfig {</span>
 
     static final String AUDIENCE = &quot;notification-service&quot;;
 
     @Bean
     SecurityFilterChain notificationSecurityFilterChain(HttpSecurity http) throws Exception {
-<span class="nc" id="L25">        http</span>
-<span class="nc" id="L26">                .csrf(csrf -&gt; csrf.disable())</span>
-<span class="nc" id="L27">                .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
-<span class="nc" id="L28">                .authorizeHttpRequests(authorize -&gt; authorize</span>
-<span class="nc" id="L29">                        .requestMatchers(&quot;/health&quot;, &quot;/error&quot;).permitAll()</span>
-<span class="nc" id="L30">                        .requestMatchers(&quot;/api/v1/notifications/**&quot;).authenticated()</span>
-<span class="nc" id="L31">                        .anyRequest().denyAll())</span>
-<span class="nc" id="L32">                .oauth2ResourceServer(oauth2 -&gt; oauth2.jwt(jwt -&gt; { }));</span>
-<span class="nc" id="L33">        return http.build();</span>
+<span class="fc" id="L25">        http</span>
+<span class="fc" id="L26">                .csrf(csrf -&gt; csrf.disable())</span>
+<span class="fc" id="L27">                .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
+<span class="fc" id="L28">                .authorizeHttpRequests(authorize -&gt; authorize</span>
+<span class="fc" id="L29">                        .requestMatchers(&quot;/health&quot;, &quot;/error&quot;).permitAll()</span>
+<span class="fc" id="L30">                        .requestMatchers(&quot;/api/v1/notifications/**&quot;).authenticated()</span>
+<span class="fc" id="L31">                        .anyRequest().denyAll())</span>
+<span class="fc" id="L32">                .oauth2ResourceServer(oauth2 -&gt; oauth2.jwt(jwt -&gt; { }));</span>
+<span class="fc" id="L33">        return http.build();</span>
     }
 
     @Bean
     JwtDecoder notificationJwtDecoder(@Value(&quot;${keycloak.issuer-uri}&quot;) String issuerUri,
                                       @Value(&quot;${keycloak.jwk-set-uri}&quot;) String jwkSetUri) {
-<span class="nc" id="L39">        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();</span>
-<span class="nc" id="L40">        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator&lt;&gt;(</span>
-<span class="nc" id="L41">                JwtValidators.createDefaultWithIssuer(issuerUri),</span>
-<span class="nc" id="L42">                audienceValidator()));</span>
-<span class="nc" id="L43">        return decoder;</span>
+<span class="fc" id="L39">        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();</span>
+<span class="fc" id="L40">        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator&lt;&gt;(</span>
+<span class="fc" id="L41">                JwtValidators.createDefaultWithIssuer(issuerUri),</span>
+<span class="fc" id="L42">                audienceValidator()));</span>
+<span class="fc" id="L43">        return decoder;</span>
     }
 
     static OAuth2TokenValidator&lt;Jwt&gt; audienceValidator() {

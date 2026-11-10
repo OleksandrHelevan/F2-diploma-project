@@ -4,6 +4,7 @@ import com.bricklayers.userservice.annotation.AuditAdminAction;
 import com.bricklayers.userservice.annotation.ForbidSelfTarget;
 import com.bricklayers.userservice.annotation.RequireKeycloakLink;
 import com.bricklayers.userservice.cache.UserProfileCache;
+import com.bricklayers.userservice.db.ReadFromPrimary;
 import com.bricklayers.userservice.dto.CreateUserRequest;
 import com.bricklayers.userservice.dto.SetPasswordRequest;
 import com.bricklayers.userservice.dto.UpdateUserRequest;
@@ -89,12 +90,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @ReadFromPrimary
     @Transactional(readOnly = true)
     public UserDto getById(UUID id) {
         return profileCache.byId(id, () -> userMapper.toDto(findUserOrThrow(id)));
     }
 
     @Override
+    @ReadFromPrimary
     @Transactional(readOnly = true)
     public UserDto getByKeycloakId(String keycloakId) {
         return profileCache.byKeycloakId(keycloakId, () -> userMapper.toDto(userRepository.findByKeycloakId(keycloakId)

@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.bricklayers.notificationservice.scheduling.QuartzJobsTest
 -------------------------------------------------------------------------------
-Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.203 s -- in com.bricklayers.notificationservice.scheduling.QuartzJobsTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.112 s -- in com.bricklayers.notificationservice.scheduling.QuartzJobsTest

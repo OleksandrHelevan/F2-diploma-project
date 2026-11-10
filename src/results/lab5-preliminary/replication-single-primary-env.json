@@ -1,0 +1,157 @@
+﻿{
+    "run":  "replication-single-primary",
+    "scenario":  "a",
+    "label":  "single primary (0.5 CPU), cache off",
+    "startedAt":  "2026-11-10T21:14:07.1618531+02:00",
+    "durationSeconds":  188,
+    "host":  {
+                 "cpu":  "13th Gen Intel(R) Core(TM) i9-13900H",
+                 "logicalCpus":  20,
+                 "ramGiB":  15.6,
+                 "dockerVmCpus":  "20",
+                 "dockerVmRamGiB":  7.6
+             },
+    "config":  {
+                   "USER_SERVICE_REPLICAS":  "2",
+                   "USER_SERVICE_CPUS":  "2",
+                   "USERS_DB_CPUS":  "0.5",
+                   "DB_POOL_SIZE":  "10",
+                   "CACHE_ENABLED":  "false",
+                   "DB_REPLICA_ENABLED":  "false",
+                   "READ_YOUR_WRITES_TTL":  "5s",
+                   "REPLICA_APPLY_DELAY":  "0"
+               },
+    "k6Cpus":  "4",
+    "containerLimits":  {
+                            "bricklayers-user-service-2":  {
+                                                               "cpus":  2,
+                                                               "memory":  "unlimited"
+                                                           },
+                            "bricklayers-user-service-3":  {
+                                                               "cpus":  2,
+                                                               "memory":  "unlimited"
+                                                           },
+                            "bricklayers-users-db":  {
+                                                         "cpus":  0.5,
+                                                         "memory":  "unlimited"
+                                                     },
+                            "bricklayers-users-db-replica":  {
+                                                                 "cpus":  0.5,
+                                                                 "memory":  "unlimited"
+                                                             },
+                            "bricklayers-redis-1":  {
+                                                        "cpus":  "unlimited",
+                                                        "memory":  "unlimited"
+                                                    },
+                            "bricklayers-keycloak":  {
+                                                         "cpus":  "unlimited",
+                                                         "memory":  "unlimited"
+                                                     },
+                            "bricklayers-lb-1":  {
+                                                     "cpus":  "unlimited",
+                                                     "memory":  "unlimited"
+                                                 },
+                            "bricklayers-notification-service-1":  {
+                                                                       "cpus":  "unlimited",
+                                                                       "memory":  "unlimited"
+                                                                   },
+                            "bricklayers-notification-service-2":  {
+                                                                       "cpus":  "unlimited",
+                                                                       "memory":  "unlimited"
+                                                                   }
+                        },
+    "dbCounterDelta":  {
+                           "postgres-users":  {
+                                                  "xact_commit":  251441,
+                                                  "tup_returned":  3355409,
+                                                  "tup_fetched":  8385
+                                              }
+                       },
+    "cpuProfile":  [
+                       {
+                           "container":  "bricklayers-user-service-2",
+                           "maxCpuPercent":  211.1,
+                           "p90CpuPercent":  204.1
+                       },
+                       {
+                           "container":  "bricklayers-user-service-3",
+                           "maxCpuPercent":  210.2,
+                           "p90CpuPercent":  204.8
+                       },
+                       {
+                           "container":  "bricklayers-notification-service-2",
+                           "maxCpuPercent":  207.9,
+                           "p90CpuPercent":  1.8
+                       },
+                       {
+                           "container":  "bricklayers-load-run-28457ad29742",
+                           "maxCpuPercent":  71.6,
+                           "p90CpuPercent":  62.8
+                       },
+                       {
+                           "container":  "bricklayers-users-db",
+                           "maxCpuPercent":  56.1,
+                           "p90CpuPercent":  54.1
+                       },
+                       {
+                           "container":  "bricklayers-lb-1",
+                           "maxCpuPercent":  44.9,
+                           "p90CpuPercent":  37.5
+                       },
+                       {
+                           "container":  "bricklayers-keycloak",
+                           "maxCpuPercent":  31.8,
+                           "p90CpuPercent":  2.3
+                       },
+                       {
+                           "container":  "bricklayers-chat-service-1",
+                           "maxCpuPercent":  9,
+                           "p90CpuPercent":  2.4
+                       },
+                       {
+                           "container":  "bricklayers-notification-service-1",
+                           "maxCpuPercent":  6,
+                           "p90CpuPercent":  2.5
+                       },
+                       {
+                           "container":  "bricklayers-notifications-db-1",
+                           "maxCpuPercent":  5.6,
+                           "p90CpuPercent":  2.2
+                       },
+                       {
+                           "container":  "bricklayers-redis-1",
+                           "maxCpuPercent":  3.6,
+                           "p90CpuPercent":  2.2
+                       },
+                       {
+                           "container":  "bricklayers-chat-service-2",
+                           "maxCpuPercent":  3.3,
+                           "p90CpuPercent":  2
+                       },
+                       {
+                           "container":  "bricklayers-users-db-replica",
+                           "maxCpuPercent":  3.2,
+                           "p90CpuPercent":  2
+                       },
+                       {
+                           "container":  "bricklayers-market-db",
+                           "maxCpuPercent":  2.9,
+                           "p90CpuPercent":  1.6
+                       },
+                       {
+                           "container":  "bricklayers-mailpit-1",
+                           "maxCpuPercent":  2,
+                           "p90CpuPercent":  1.5
+                       },
+                       {
+                           "container":  "bricklayers-web-app",
+                           "maxCpuPercent":  0,
+                           "p90CpuPercent":  0
+                       },
+                       {
+                           "container":  "bricklayers-keycloak-swagger",
+                           "maxCpuPercent":  0,
+                           "p90CpuPercent":  0
+                       }
+                   ]
+}

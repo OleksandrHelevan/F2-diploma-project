@@ -1,0 +1,24 @@
+{
+  "scenario": "scenario-c-workflow",
+  "description": "Complex workflow: list -> account overview (Keycloak + audit, parallel) -> update -> read own write",
+  "run": "smoke-c-workflow",
+  "environment": "",
+  "stageSeconds": 5,
+  "warmupSeconds": 3,
+  "rows": [
+    {
+      "vus": 5,
+      "requests": 1136,
+      "rps": 227.2,
+      "iterationsPerSecond": 56.8,
+      "avgMs": 21.7693108213028,
+      "p50Ms": 15.5206605,
+      "p95Ms": 56.59939575,
+      "p99Ms": 70.42482630000009,
+      "maxMs": 164.991812,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 110
+    }
+  ]
+}

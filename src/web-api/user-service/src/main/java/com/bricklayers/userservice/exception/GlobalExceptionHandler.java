@@ -4,7 +4,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.hibernate.exception.JDBCConnectionException;
 import org.springframework.core.task.TaskRejectedException;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -79,6 +82,18 @@ public class GlobalExceptionHandler {
                 null
         );
         return ResponseEntity.status(status).body(body);
+    }
+
+    @ExceptionHandler({DataAccessResourceFailureException.class, CannotCreateTransactionException.class,
+            JDBCConnectionException.class})
+    public ResponseEntity<ErrorResponse> handleDatabaseUnavailable(Exception ex, HttpServletRequest request) {
+        boolean write = !HttpMethod.GET.matches(request.getMethod()) && !HttpMethod.HEAD.matches(request.getMethod());
+        log.warn("Database unavailable on {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+        String message = resolve(write ? "database.read-only" : "database.unavailable", null);
+        ResponseEntity<ErrorResponse> response = build(HttpStatus.SERVICE_UNAVAILABLE, message, request, null);
+        return ResponseEntity.status(response.getStatusCode())
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(RETRY_AFTER_SECONDS))
+                .body(response.getBody());
     }
 
     @ExceptionHandler(TaskRejectedException.class)

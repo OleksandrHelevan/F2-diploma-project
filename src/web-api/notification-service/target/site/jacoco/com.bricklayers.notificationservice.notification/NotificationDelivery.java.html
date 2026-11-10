@@ -19,8 +19,8 @@ public class NotificationDelivery {
     @Transactional
     public DeliveryResult deliver(UUID notificationId, int maxAttempts) {
 <span class="fc" id="L21">        Optional&lt;NotificationOutbox&gt; claimed = repository.lockPending(notificationId);</span>
-<span class="pc bpc" id="L22" title="1 of 2 branches missed.">        if (claimed.isEmpty()) {</span>
-<span class="nc" id="L23">            return new DeliveryResult(notificationId, DeliveryResult.Outcome.SKIPPED, 0, null);</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if (claimed.isEmpty()) {</span>
+<span class="fc" id="L23">            return new DeliveryResult(notificationId, DeliveryResult.Outcome.SKIPPED, 0, null);</span>
         }
 <span class="fc" id="L25">        NotificationOutbox notification = claimed.get();</span>
         try {
@@ -31,8 +31,8 @@ public class NotificationDelivery {
 <span class="fc" id="L31">            return new DeliveryResult(notificationId, DeliveryResult.Outcome.SENT, notification.getAttempts(), null);</span>
 <span class="fc" id="L32">        } catch (RuntimeException exception) {</span>
 <span class="fc" id="L33">            notification.recordFailure(exception, maxAttempts);</span>
-<span class="pc bpc" id="L34" title="1 of 2 branches missed.">            DeliveryResult.Outcome outcome = notification.getStatus() == NotificationStatus.FAILED</span>
-<span class="nc" id="L35">                    ? DeliveryResult.Outcome.GAVE_UP</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">            DeliveryResult.Outcome outcome = notification.getStatus() == NotificationStatus.FAILED</span>
+<span class="fc" id="L35">                    ? DeliveryResult.Outcome.GAVE_UP</span>
 <span class="fc" id="L36">                    : DeliveryResult.Outcome.RETRY_LATER;</span>
 <span class="fc" id="L37">            log.warn(&quot;Notification {} attempt {}/{} failed: {}&quot;, notificationId, notification.getAttempts(),</span>
 <span class="fc" id="L38">                    maxAttempts, notification.getLastError());</span>

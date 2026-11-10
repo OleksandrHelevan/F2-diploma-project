@@ -10,13 +10,108 @@ services:
       POSTGRES_PASSWORD: ${USERS_DB_PASSWORD:-users_password}
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
+    # Lab 6: primary of the users_db replication topology (asynchronous streaming replication).
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+      - -c
+      - wal_keep_size=256MB
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
+    cpus: ${USERS_DB_CPUS:-0}
     volumes:
       - users_db_data:/var/lib/postgresql/data
+      - ./infra/postgres/primary-pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: ${DB_HEALTHCHECK_INTERVAL:-5s}
       timeout: ${DB_HEALTHCHECK_TIMEOUT:-5s}
       retries: ${DB_HEALTHCHECK_RETRIES:-10}
+
+  # Lab 6: creates the replication role and slot on the primary (idempotent, runs once per `up`).
+  users-db-replication-setup:
+    image: postgres:${POSTGRES_VERSION:-16-alpine}
+    depends_on:
+      postgres-users:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${USERS_DB_PASSWORD:-users_password}
+    volumes:
+      - ./infra/postgres/replication-setup.sql:/replication-setup.sql:ro
+    command:
+      - psql
+      - -h
+      - postgres-users
+      - -U
+      - ${USERS_DB_USER:-users_service}
+      - -d
+      - ${USERS_DB_NAME:-users_db}
+      - -v
+      - ON_ERROR_STOP=1
+      - -v
+      - repl_password=${REPLICATION_PASSWORD:-replicator_password}
+      - -f
+      - /replication-setup.sql
+    restart: "no"
+
+  # Lab 6: hot-standby read replica of users_db. REPLICA_APPLY_DELAY (e.g. 3s) emulates replication lag.
+  postgres-users-replica:
+    image: postgres:${POSTGRES_VERSION:-16-alpine}
+    container_name: ${POSTGRES_REPLICA_CONTAINER_NAME:-bricklayers-users-db-replica}
+    user: postgres
+    depends_on:
+      users-db-replication-setup:
+        condition: service_completed_successfully
+    environment:
+      PRIMARY_HOST: postgres-users
+      REPLICATION_USER: replicator
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:-replicator_password}
+      REPLICATION_SLOT: users_replica_slot
+      REPLICA_APPLY_DELAY: ${REPLICA_APPLY_DELAY:-0}
+    entrypoint: ["/bin/sh", "/replica-entrypoint.sh"]
+    cpus: ${USERS_DB_CPUS:-0}
+    volumes:
+      - users_db_replica_data:/var/lib/postgresql/data
+      - ./infra/postgres/replica-entrypoint.sh:/replica-entrypoint.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${USERS_DB_USER:-users_service} -d ${USERS_DB_NAME:-users_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  # Lab 6 read-scaling experiment only: a second hot standby (`--profile replica2`), no replication slot.
+  postgres-users-replica-2:
+    image: postgres:${POSTGRES_VERSION:-16-alpine}
+    container_name: bricklayers-users-db-replica-2
+    profiles: [replica2]
+    user: postgres
+    depends_on:
+      users-db-replication-setup:
+        condition: service_completed_successfully
+    environment:
+      PRIMARY_HOST: postgres-users
+      REPLICATION_USER: replicator
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:-replicator_password}
+      REPLICA_APPLY_DELAY: ${REPLICA_APPLY_DELAY:-0}
+    entrypoint: ["/bin/sh", "/replica-entrypoint.sh"]
+    cpus: ${USERS_DB_CPUS:-0}
+    volumes:
+      - users_db_replica2_data:/var/lib/postgresql/data
+      - ./infra/postgres/replica-entrypoint.sh:/replica-entrypoint.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${USERS_DB_USER:-users_service} -d ${USERS_DB_NAME:-users_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
 
   market-db:
     image: postgres:${POSTGRES_VERSION:-16-alpine}
@@ -144,6 +239,8 @@ services:
         condition: service_started
       notification-service:
         condition: service_started
+      postgres-users-replica:
+        condition: service_started
     environment:
       SERVER_PORT: 8081
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
@@ -168,6 +265,11 @@ services:
       ASYNC_QUEUE_CAPACITY: ${ASYNC_QUEUE_CAPACITY:-50}
       # Docker DNS returns every replica; the request id makes retries safe.
       NOTIFICATION_SERVICE_URL: http://notification-service:8086
+      # Lab 6: read/write separation. false = single-primary topology for the comparison runs.
+      DB_REPLICA_ENABLED: ${DB_REPLICA_ENABLED:-true}
+      DB_REPLICA_URL: ${DB_REPLICA_URL:-jdbc:postgresql://postgres-users-replica:5432/users_db}
+      DB_REPLICA_POOL_SIZE: ${DB_REPLICA_POOL_SIZE:-10}
+      READ_YOUR_WRITES_TTL: ${READ_YOUR_WRITES_TTL:-5s}
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/health"]
       interval: 5s
@@ -251,6 +353,7 @@ services:
   load:
     image: grafana/k6:${K6_VERSION:-0.57.0}
     profiles: [tools]
+    cpus: ${K6_CPUS:-0}
     entrypoint: ["k6", "run", "/scripts/scaling.js"]
     environment:
       BASE_URL: http://lb:8080
@@ -263,6 +366,7 @@ services:
       SLOW_INSTANCE: ${SLOW_INSTANCE:-}
       INSTANCE_IDS: ${INSTANCE_IDS:-}
       REQUIRE_NO_ERRORS: ${REQUIRE_NO_ERRORS:-false}
+      KEYCLOAK_URL: http://keycloak:8080
     volumes:
       - ./load-tests:/scripts:ro
       - ./results:/results
@@ -283,6 +387,10 @@ services:
 volumes:
   users_db_data:
     name: ${USERS_DB_VOLUME:-users_db_data}
+  users_db_replica_data:
+    name: ${USERS_DB_REPLICA_VOLUME:-users_db_replica_data}
+  users_db_replica2_data:
+    name: users_db_replica2_data
   market_db_data:
     name: market_db_data
   notifications_db_data:

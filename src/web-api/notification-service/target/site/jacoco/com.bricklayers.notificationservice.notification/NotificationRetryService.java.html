@@ -22,23 +22,23 @@ public class NotificationRetryService {
 
     public RetrySummary retryPending(int batchSize, int maxAttempts, Duration minAge) {
 
-<span class="nc" id="L25">        LocalDateTime createdBefore = LocalDateTime.now().minus(minAge);</span>
-<span class="nc" id="L26">        List&lt;UUID&gt; ids = repository.findIdsByStatusCreatedBefore(</span>
-<span class="nc" id="L27">                NotificationStatus.PENDING, createdBefore, PageRequest.of(0, batchSize));</span>
+<span class="fc" id="L25">        LocalDateTime createdBefore = LocalDateTime.now().minus(minAge);</span>
+<span class="fc" id="L26">        List&lt;UUID&gt; ids = repository.findIdsByStatusCreatedBefore(</span>
+<span class="fc" id="L27">                NotificationStatus.PENDING, createdBefore, PageRequest.of(0, batchSize));</span>
 
-<span class="nc" id="L29">        Map&lt;DeliveryResult.Outcome, Integer&gt; outcomes = new EnumMap&lt;&gt;(DeliveryResult.Outcome.class);</span>
-<span class="nc bnc" id="L30" title="All 2 branches missed.">        for (UUID id : ids) {</span>
-<span class="nc" id="L31">            outcomes.merge(delivery.deliver(id, maxAttempts).outcome(), 1, Integer::sum);</span>
-<span class="nc" id="L32">        }</span>
-<span class="nc" id="L33">        RetrySummary summary = new RetrySummary(ids.size(),</span>
-<span class="nc" id="L34">                outcomes.getOrDefault(DeliveryResult.Outcome.SENT, 0),</span>
-<span class="nc" id="L35">                outcomes.getOrDefault(DeliveryResult.Outcome.RETRY_LATER, 0),</span>
-<span class="nc" id="L36">                outcomes.getOrDefault(DeliveryResult.Outcome.GAVE_UP, 0),</span>
-<span class="nc" id="L37">                outcomes.getOrDefault(DeliveryResult.Outcome.SKIPPED, 0));</span>
-<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (summary.picked() &gt; 0) {</span>
-<span class="nc" id="L39">            log.info(&quot;Notification retry: {}&quot;, summary);</span>
+<span class="fc" id="L29">        Map&lt;DeliveryResult.Outcome, Integer&gt; outcomes = new EnumMap&lt;&gt;(DeliveryResult.Outcome.class);</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        for (UUID id : ids) {</span>
+<span class="fc" id="L31">            outcomes.merge(delivery.deliver(id, maxAttempts).outcome(), 1, Integer::sum);</span>
+<span class="fc" id="L32">        }</span>
+<span class="fc" id="L33">        RetrySummary summary = new RetrySummary(ids.size(),</span>
+<span class="fc" id="L34">                outcomes.getOrDefault(DeliveryResult.Outcome.SENT, 0),</span>
+<span class="fc" id="L35">                outcomes.getOrDefault(DeliveryResult.Outcome.RETRY_LATER, 0),</span>
+<span class="fc" id="L36">                outcomes.getOrDefault(DeliveryResult.Outcome.GAVE_UP, 0),</span>
+<span class="fc" id="L37">                outcomes.getOrDefault(DeliveryResult.Outcome.SKIPPED, 0));</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (summary.picked() &gt; 0) {</span>
+<span class="fc" id="L39">            log.info(&quot;Notification retry: {}&quot;, summary);</span>
         }
-<span class="nc" id="L41">        return summary;</span>
+<span class="fc" id="L41">        return summary;</span>
     }
 
 <span class="fc" id="L44">    public record RetrySummary(int picked, int sent, int retryLater, int gaveUp, int skipped) {</span>

@@ -1,27 +1,27 @@
 GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
 notification-service,com.bricklayers.notificationservice.notification,NotificationTemplates.Rendered,0,9,0,0,0,1,0,1,0,1
-notification-service,com.bricklayers.notificationservice.notification,NotificationService,7,67,1,3,1,17,1,5,0,4
+notification-service,com.bricklayers.notificationservice.notification,NotificationService,0,74,0,4,0,18,0,6,0,4
 notification-service,com.bricklayers.notificationservice.notification,NotificationService.Accepted,0,9,0,0,0,1,0,1,0,1
-notification-service,com.bricklayers.notificationservice.notification,NotificationDelivery,10,106,2,2,2,16,2,2,0,2
-notification-service,com.bricklayers.notificationservice.notification,NotificationRetentionService,38,4,2,0,10,1,3,1,2,1
+notification-service,com.bricklayers.notificationservice.notification,NotificationDelivery,0,116,0,4,0,18,0,4,0,2
+notification-service,com.bricklayers.notificationservice.notification,NotificationRetentionService,6,36,1,1,1,10,1,3,0,3
 notification-service,com.bricklayers.notificationservice.notification,NotificationRetryService.RetrySummary,0,18,0,0,0,1,0,1,0,1
 notification-service,com.bricklayers.notificationservice.notification,NotificationDispatcher,0,25,0,2,0,8,0,3,0,2
 notification-service,com.bricklayers.notificationservice.notification,NotificationTemplates,2,80,3,9,0,16,3,7,0,4
 notification-service,com.bricklayers.notificationservice.notification,DeliveryResult.Outcome,0,27,0,0,0,5,0,1,0,1
-notification-service,com.bricklayers.notificationservice.notification,NotificationRetryService,84,4,4,0,15,1,3,1,1,1
+notification-service,com.bricklayers.notificationservice.notification,NotificationRetryService,0,88,0,4,0,16,0,4,0,2
 notification-service,com.bricklayers.notificationservice.notification,DeliveryResult,0,27,1,3,0,2,1,3,0,2
 notification-service,com.bricklayers.notificationservice.notification,NotificationStatus,0,21,0,0,0,4,0,1,0,1
 notification-service,com.bricklayers.notificationservice.notification,MailGateway,59,0,4,0,21,0,5,0,3,0
-notification-service,com.bricklayers.notificationservice.notification,NotificationService.new TransactionSynchronization() {...},15,0,0,0,3,0,2,0,2,0
-notification-service,com.bricklayers.notificationservice.notification,NotificationOutbox,14,44,4,2,3,10,4,2,1,2
+notification-service,com.bricklayers.notificationservice.notification,NotificationService.new TransactionSynchronization() {...},0,15,0,0,0,3,0,2,0,2
+notification-service,com.bricklayers.notificationservice.notification,NotificationOutbox,12,46,3,3,3,10,3,3,1,2
 notification-service,com.bricklayers.notificationservice.notification,NotificationDeliveryException,0,14,0,0,0,3,0,1,0,1
-notification-service,com.bricklayers.notificationservice,NotificationServiceApplication,8,0,0,0,3,0,2,0,2,0
+notification-service,com.bricklayers.notificationservice,NotificationServiceApplication,5,3,0,0,2,1,1,1,1,1
 notification-service,com.bricklayers.notificationservice.controller,NotificationController,7,0,0,0,1,0,1,0,1,0
 notification-service,com.bricklayers.notificationservice.controller,HealthController,19,0,0,0,4,0,1,0,1,0
-notification-service,com.bricklayers.notificationservice.config,SecurityConfig,82,25,1,3,15,3,9,3,8,2
+notification-service,com.bricklayers.notificationservice.config,SecurityConfig,0,107,1,3,0,18,1,11,0,10
 notification-service,com.bricklayers.notificationservice.scheduling,JobParameters,32,102,4,8,5,20,3,7,0,4
 notification-service,com.bricklayers.notificationservice.scheduling,QuartzTimeZones,0,22,1,3,0,5,1,3,0,2
-notification-service,com.bricklayers.notificationservice.scheduling,QuartzScheduleReconciler,53,198,23,23,9,33,19,10,0,6
+notification-service,com.bricklayers.notificationservice.scheduling,QuartzScheduleReconciler,27,224,18,28,6,36,18,11,0,6
 notification-service,com.bricklayers.notificationservice.scheduling,JobFailurePolicy,0,73,0,2,0,10,0,3,0,2
 notification-service,com.bricklayers.notificationservice.scheduling,QuartzJobsConfig,0,149,0,0,0,59,0,7,0,7
 notification-service,com.bricklayers.notificationservice.scheduling,NotificationRetryJob,0,48,0,0,0,13,0,3,0,3

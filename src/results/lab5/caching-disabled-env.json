@@ -1,0 +1,164 @@
+﻿{
+    "run":  "caching-disabled",
+    "scenario":  "a",
+    "label":  "Redis cache disabled",
+    "startedAt":  "2026-11-10T23:08:39.4370547+02:00",
+    "durationSeconds":  229,
+    "host":  {
+                 "cpu":  "13th Gen Intel(R) Core(TM) i9-13900H",
+                 "logicalCpus":  20,
+                 "ramGiB":  15.6,
+                 "dockerVmCpus":  "20",
+                 "dockerVmRamGiB":  7.6
+             },
+    "config":  {
+                   "USER_SERVICE_REPLICAS":  "2",
+                   "USER_SERVICE_CPUS":  "1",
+                   "USERS_DB_CPUS":  "2",
+                   "DB_POOL_SIZE":  "10",
+                   "CACHE_ENABLED":  "false",
+                   "DB_REPLICA_ENABLED":  "false",
+                   "READ_YOUR_WRITES_TTL":  "5s",
+                   "REPLICA_APPLY_DELAY":  "0",
+                   "REPLICAS":  "0"
+               },
+    "k6Cpus":  "4",
+    "warmup":  "60 s at 20 VUs",
+    "containerLimits":  {
+                            "bricklayers-user-service-3":  {
+                                                               "cpus":  1,
+                                                               "memory":  "unlimited"
+                                                           },
+                            "bricklayers-user-service-4":  {
+                                                               "cpus":  1,
+                                                               "memory":  "unlimited"
+                                                           },
+                            "bricklayers-users-db":  {
+                                                         "cpus":  2,
+                                                         "memory":  "unlimited"
+                                                     },
+                            "bricklayers-users-db-replica":  {
+                                                                 "cpus":  2,
+                                                                 "memory":  "unlimited"
+                                                             },
+                            "bricklayers-redis-1":  {
+                                                        "cpus":  "unlimited",
+                                                        "memory":  "unlimited"
+                                                    },
+                            "bricklayers-keycloak":  {
+                                                         "cpus":  "unlimited",
+                                                         "memory":  "unlimited"
+                                                     },
+                            "bricklayers-lb-1":  {
+                                                     "cpus":  "unlimited",
+                                                     "memory":  "unlimited"
+                                                 },
+                            "bricklayers-notification-service-1":  {
+                                                                       "cpus":  "unlimited",
+                                                                       "memory":  "unlimited"
+                                                                   },
+                            "bricklayers-notification-service-2":  {
+                                                                       "cpus":  "unlimited",
+                                                                       "memory":  "unlimited"
+                                                                   }
+                        },
+    "dbCounterDelta":  {
+                           "postgres-users":  {
+                                                  "xact_commit":  282277,
+                                                  "tup_returned":  3765239,
+                                                  "tup_fetched":  10534
+                                              },
+                           "postgres-users-replica":  {
+                                                          "xact_commit":  47,
+                                                          "tup_returned":  798,
+                                                          "tup_fetched":  752
+                                                      }
+                       },
+    "cpuProfile":  [
+                       {
+                           "container":  "bricklayers-notification-service-1",
+                           "maxCpuPercent":  368.9,
+                           "p90CpuPercent":  2.1
+                       },
+                       {
+                           "container":  "bricklayers-keycloak",
+                           "maxCpuPercent":  127.6,
+                           "p90CpuPercent":  1.2
+                       },
+                       {
+                           "container":  "bricklayers-user-service-3",
+                           "maxCpuPercent":  111.8,
+                           "p90CpuPercent":  108.6
+                       },
+                       {
+                           "container":  "bricklayers-user-service-4",
+                           "maxCpuPercent":  110.1,
+                           "p90CpuPercent":  105.9
+                       },
+                       {
+                           "container":  "bricklayers-load-run-f9fb504803d7",
+                           "maxCpuPercent":  49.2,
+                           "p90CpuPercent":  44.1
+                       },
+                       {
+                           "container":  "bricklayers-users-db",
+                           "maxCpuPercent":  47.9,
+                           "p90CpuPercent":  40.7
+                       },
+                       {
+                           "container":  "bricklayers-chat-service-2",
+                           "maxCpuPercent":  36.2,
+                           "p90CpuPercent":  3
+                       },
+                       {
+                           "container":  "bricklayers-lb-1",
+                           "maxCpuPercent":  29.5,
+                           "p90CpuPercent":  26.3
+                       },
+                       {
+                           "container":  "bricklayers-chat-service-1",
+                           "maxCpuPercent":  18.6,
+                           "p90CpuPercent":  2
+                       },
+                       {
+                           "container":  "bricklayers-notification-service-2",
+                           "maxCpuPercent":  16.4,
+                           "p90CpuPercent":  2.3
+                       },
+                       {
+                           "container":  "bricklayers-notifications-db-1",
+                           "maxCpuPercent":  3.7,
+                           "p90CpuPercent":  2
+                       },
+                       {
+                           "container":  "bricklayers-market-db",
+                           "maxCpuPercent":  3.6,
+                           "p90CpuPercent":  1.7
+                       },
+                       {
+                           "container":  "bricklayers-mailpit-1",
+                           "maxCpuPercent":  3.3,
+                           "p90CpuPercent":  1.3
+                       },
+                       {
+                           "container":  "bricklayers-redis-1",
+                           "maxCpuPercent":  2.6,
+                           "p90CpuPercent":  1.1
+                       },
+                       {
+                           "container":  "bricklayers-users-db-replica",
+                           "maxCpuPercent":  2,
+                           "p90CpuPercent":  1.4
+                       },
+                       {
+                           "container":  "bricklayers-keycloak-swagger",
+                           "maxCpuPercent":  0,
+                           "p90CpuPercent":  0
+                       },
+                       {
+                           "container":  "bricklayers-web-app",
+                           "maxCpuPercent":  0,
+                           "p90CpuPercent":  0
+                       }
+                   ]
+}

@@ -1,0 +1,80 @@
+{
+  "scenario": "scenario-a-read",
+  "description": "Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)",
+  "run": "caching-disabled",
+  "environment": "Redis cache disabled",
+  "stageSeconds": 30,
+  "warmupSeconds": 20,
+  "rows": [
+    {
+      "vus": 10,
+      "requests": 6618,
+      "rps": 220.6,
+      "iterationsPerSecond": 73.53333333333333,
+      "avgMs": 45.083170538380244,
+      "p50Ms": 14.190492500000001,
+      "p95Ms": 97.24119504999999,
+      "p99Ms": 102.08960049,
+      "maxMs": 194.935737,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 25,
+      "requests": 9033,
+      "rps": 301.1,
+      "iterationsPerSecond": 100.36666666666666,
+      "avgMs": 83.09509516594696,
+      "p50Ms": 94.532579,
+      "p95Ms": 193.9915526,
+      "p99Ms": 205.31376312,
+      "maxMs": 383.077367,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 50,
+      "requests": 10188,
+      "rps": 339.6,
+      "iterationsPerSecond": 113.2,
+      "avgMs": 147.16179943168476,
+      "p50Ms": 104.8951495,
+      "p95Ms": 387.6694119,
+      "p99Ms": 498.2473503499997,
+      "maxMs": 881.054994,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 100,
+      "requests": 12108,
+      "rps": 403.6,
+      "iterationsPerSecond": 134.53333333333333,
+      "avgMs": 249.32563578138243,
+      "p50Ms": 198.147763,
+      "p95Ms": 608.7162370499998,
+      "p99Ms": 998.9733209300001,
+      "maxMs": 1906.467915,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 200,
+      "requests": 12885,
+      "rps": 429.5,
+      "iterationsPerSecond": 143.16666666666666,
+      "avgMs": 475.47199291687605,
+      "p50Ms": 194.558999,
+      "p95Ms": 1899.9376938,
+      "p99Ms": 3025.3907523599933,
+      "maxMs": 6096.042011,
+      "errorRate": 0.0035700426852929763,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    }
+  ]
+}

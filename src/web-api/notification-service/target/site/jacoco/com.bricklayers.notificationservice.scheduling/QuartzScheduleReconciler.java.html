@@ -68,13 +68,13 @@ public class QuartzScheduleReconciler {
 <span class="pc bpc" id="L68" title="1 of 2 branches missed.">                || !sameData(stored.getJobDataMap(), declared.getJobDataMap())) {</span>
 <span class="nc" id="L69">            return false;</span>
         }
-<span class="pc bpc" id="L71" title="2 of 4 branches missed.">        if (stored instanceof CronTrigger storedCron &amp;&amp; declared instanceof CronTrigger declaredCron) {</span>
+<span class="pc bpc" id="L71" title="1 of 4 branches missed.">        if (stored instanceof CronTrigger storedCron &amp;&amp; declared instanceof CronTrigger declaredCron) {</span>
 <span class="fc bfc" id="L72" title="All 2 branches covered.">            return storedCron.getCronExpression().equals(declaredCron.getCronExpression())</span>
 <span class="pc bpc" id="L73" title="1 of 2 branches missed.">                    &amp;&amp; storedCron.getTimeZone().getID().equals(declaredCron.getTimeZone().getID());</span>
         }
-<span class="nc bnc" id="L75" title="All 4 branches missed.">        if (stored instanceof SimpleTrigger storedSimple &amp;&amp; declared instanceof SimpleTrigger declaredSimple) {</span>
-<span class="nc bnc" id="L76" title="All 2 branches missed.">            return storedSimple.getRepeatInterval() == declaredSimple.getRepeatInterval()</span>
-<span class="nc bnc" id="L77" title="All 2 branches missed.">                    &amp;&amp; storedSimple.getRepeatCount() == declaredSimple.getRepeatCount();</span>
+<span class="pc bpc" id="L75" title="2 of 4 branches missed.">        if (stored instanceof SimpleTrigger storedSimple &amp;&amp; declared instanceof SimpleTrigger declaredSimple) {</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            return storedSimple.getRepeatInterval() == declaredSimple.getRepeatInterval()</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">                    &amp;&amp; storedSimple.getRepeatCount() == declaredSimple.getRepeatCount();</span>
         }
 <span class="nc" id="L79">        return false;</span>
     }

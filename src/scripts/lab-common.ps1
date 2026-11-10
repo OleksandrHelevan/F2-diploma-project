@@ -34,9 +34,10 @@ function Invoke-Compose {
 $script:DbCredentials = @{}
 function Invoke-ServiceDb([string]$Service, [string]$Sql) {
     if (-not $script:DbCredentials.ContainsKey($Service)) {
+        $credentialSource = if ($Service -like 'postgres-users-replica*') { 'postgres-users' } else { $Service }
         $script:DbCredentials[$Service] = @(
-            (@(Invoke-Compose exec -T $Service printenv POSTGRES_USER) -join '').Trim(),
-            (@(Invoke-Compose exec -T $Service printenv POSTGRES_DB) -join '').Trim())
+            (@(Invoke-Compose exec -T $credentialSource printenv POSTGRES_USER) -join '').Trim(),
+            (@(Invoke-Compose exec -T $credentialSource printenv POSTGRES_DB) -join '').Trim())
     }
     $user, $db = $script:DbCredentials[$Service]
     Invoke-Compose exec -T $Service psql -U $user -d $db -At -F '|' -c $Sql
