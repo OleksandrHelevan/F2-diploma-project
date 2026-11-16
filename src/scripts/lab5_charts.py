@@ -58,12 +58,13 @@ def comparison_chart(file_name, title, runs):
     if len(loaded) < 2:
         return
     fig, (left, right) = plt.subplots(1, 2, figsize=(12, 4.2))
-    for label, report in loaded:
+    palette = ("#2b6cb0", "#dd6b20", "#38a169", "#805ad5")
+    for (label, report), color in zip(loaded, palette):
         data = rows(report)
         vus = [r["vus"] for r in data]
-        left.plot(vus, [r["rps"] for r in data], marker="o", label=label)
-        right.plot(vus, [r["p95Ms"] for r in data], marker="o", label=f"{label} p95")
-        right.plot(vus, [r["p99Ms"] for r in data], marker=".", linestyle=":", label=f"{label} p99")
+        left.plot(vus, [r["rps"] for r in data], marker="o", label=label, color=color)
+        right.plot(vus, [r["p95Ms"] for r in data], marker="o", label=f"{label} p95", color=color)
+        right.plot(vus, [r["p99Ms"] for r in data], marker=".", linestyle=":", label=f"{label} p99", color=color)
     left.set_title(f"{title}: throughput")
     left.set_xlabel("Virtual users")
     left.set_ylabel("Requests / s")
@@ -88,5 +89,6 @@ comparison_chart("scaling", "Scenario A, user-service instances", [
 comparison_chart("caching", "Scenario A, Redis cache", [
     ("cache disabled", "caching-disabled"), ("cache enabled", "caching-enabled")])
 comparison_chart("replication", "Scenario A, PostgreSQL topology", [
-    ("single primary", "replication-single-primary"), ("primary + replica", "replication-primary-replica")])
+    ("single primary", "replication-single-primary"), ("primary + 1 replica", "replication-1-replica"),
+    ("primary + 2 replicas", "replication-2-replicas")])
 print("charts written to", OUT.resolve())

@@ -58,6 +58,17 @@ spring:
           issuer-uri: ${keycloak.issuer-uri}
           jwk-set-uri: ${keycloak.jwk-set-uri}
 
+# Prefixed paths let HAProxy route Swagger to this service: localhost:8080/notification-service/swagger-ui.html
+springdoc:
+  api-docs:
+    path: /notification-service/v3/api-docs
+  swagger-ui:
+    path: /notification-service/swagger-ui.html
+    display-request-duration: true
+    oauth:
+      client-id: bricklayers-web-app
+      use-pkce-with-authorization-code-grant: true
+
 server:
   port: ${SERVER_PORT:8086}
   shutdown: graceful

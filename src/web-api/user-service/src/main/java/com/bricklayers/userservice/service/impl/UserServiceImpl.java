@@ -14,7 +14,6 @@ import com.bricklayers.userservice.entity.User;
 import com.bricklayers.userservice.exception.UserAlreadyExistsException;
 import com.bricklayers.userservice.exception.UserNotFoundException;
 import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient;
-import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient.KeycloakCredential;
 import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient.KeycloakRole;
 import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient.KeycloakUserRepresentation;
 import com.bricklayers.userservice.mapper.UserMapper;

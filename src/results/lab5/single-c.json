@@ -1,0 +1,52 @@
+{
+  "scenario": "scenario-c-workflow",
+  "description": "Complex workflow: list -> account overview (Keycloak + audit, parallel) -> update -> read own write",
+  "run": "single-c",
+  "environment": "defaults",
+  "stageSeconds": 15,
+  "warmupSeconds": 20,
+  "rows": [
+    {
+      "vus": 10,
+      "requests": 1028,
+      "rps": 68.53333333333333,
+      "iterationsPerSecond": 17.133333333333333,
+      "avgMs": 146.91484245525263,
+      "p50Ms": 100.413141,
+      "p95Ms": 402.55036495,
+      "p99Ms": 581.5426668200001,
+      "maxMs": 788.998598,
+      "errorRate": 0,
+      "staleReadRate": 0.06614785992217899,
+      "workflowP95Ms": 893
+    },
+    {
+      "vus": 50,
+      "requests": 1680,
+      "rps": 112,
+      "iterationsPerSecond": 28.2,
+      "avgMs": 465.6979154511901,
+      "p50Ms": 365.058646,
+      "p95Ms": 1279.2788769,
+      "p99Ms": 1697.63481104,
+      "maxMs": 2388.419272,
+      "errorRate": 0.0035714285714285713,
+      "staleReadRate": 0.2589928057553957,
+      "workflowP95Ms": 2996.2
+    },
+    {
+      "vus": 200,
+      "requests": 2270,
+      "rps": 151.33333333333334,
+      "iterationsPerSecond": 50.53333333333333,
+      "avgMs": 1499.725228359471,
+      "p50Ms": 897.9738159999999,
+      "p95Ms": 4515.33086735,
+      "p99Ms": 6875.567811659999,
+      "maxMs": 8808.663607,
+      "errorRate": 0.1801762114537445,
+      "staleReadRate": 0.5329512893982808,
+      "workflowP95Ms": 11124.799999999996
+    }
+  ]
+}

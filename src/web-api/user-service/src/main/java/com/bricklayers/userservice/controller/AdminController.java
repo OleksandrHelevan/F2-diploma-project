@@ -2,11 +2,8 @@ package com.bricklayers.userservice.controller;
 
 import com.bricklayers.userservice.annotation.SuperAdminDelete;
 import com.bricklayers.userservice.dto.CreateUserRequest;
-import com.bricklayers.userservice.dto.SetPasswordRequest;
 import com.bricklayers.userservice.dto.UpdateUserRequest;
 import com.bricklayers.userservice.dto.UserDto;
-import com.bricklayers.userservice.exception.UserNotFoundException;
-import com.bricklayers.userservice.integration.keycloak.KeycloakAdminClient;
 import com.bricklayers.userservice.overview.AccountOverviewDto;
 import com.bricklayers.userservice.overview.AccountOverviewService;
 import com.bricklayers.userservice.repository.UserRepository;
@@ -14,12 +11,10 @@ import com.bricklayers.userservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.util.List;

@@ -1,6 +1,7 @@
 package com.bricklayers.userservice.db;
 
 import com.zaxxer.hikari.HikariDataSource;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -98,7 +99,7 @@ public class DataSourceConfig {
     public WebMvcConfigurer readYourWritesWebConfigurer(ReadYourWritesTracker tracker) {
         return new WebMvcConfigurer() {
             @Override
-            public void addInterceptors(InterceptorRegistry registry) {
+            public void addInterceptors(@NonNull InterceptorRegistry registry) {
                 registry.addInterceptor(new ReadYourWritesInterceptor(tracker)).addPathPatterns("/api/**");
             }
         };

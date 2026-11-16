@@ -7,6 +7,7 @@ com\bricklayers\notificationservice\notification\DeliveryResult$Outcome.class
 com\bricklayers\notificationservice\notification\DeliveryResult.class
 com\bricklayers\notificationservice\notification\NotificationTemplates.class
 com\bricklayers\notificationservice\scheduling\NotificationRetryJob.class
+com\bricklayers\notificationservice\config\OpenApiConfig.class
 com\bricklayers\notificationservice\scheduling\JobFailurePolicy.class
 com\bricklayers\notificationservice\scheduling\QuartzScheduleReconciler.class
 com\bricklayers\notificationservice\scheduling\JobParameters.class

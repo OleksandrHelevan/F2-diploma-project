@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="uk"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenApiConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.bricklayers.notificationservice.config</a> &gt; <span class="el_source">OpenApiConfig.java</span></div><h1>OpenApiConfig.java</h1><pre class="source lang-java linenums">package com.bricklayers.notificationservice.config;
+
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.OAuthFlow;
+import io.swagger.v3.oas.models.security.OAuthFlows;
+import io.swagger.v3.oas.models.security.Scopes;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
+
+@Configuration
+<span class="nc" id="L18">public class OpenApiConfig {</span>
+
+    @Bean
+    OpenAPI notificationServiceOpenApi(@Value(&quot;${keycloak.issuer-uri}&quot;) String issuerUri) {
+<span class="nc" id="L22">        return new OpenAPI()</span>
+<span class="nc" id="L23">                .info(new Info()</span>
+<span class="nc" id="L24">                        .title(&quot;Bricklayers Notification Service API&quot;)</span>
+<span class="nc" id="L25">                        .version(&quot;v1&quot;)</span>
+<span class="nc" id="L26">                        .description(&quot;Internal e-mail API: accepts a notification (202), stores it in the outbox and &quot;</span>
+                                + &quot;sends it asynchronously. Callers: the user-service service account or SUPERADMIN.&quot;))
+<span class="nc" id="L28">                .components(new Components().addSecuritySchemes(&quot;keycloak&quot;,</span>
+                        new SecurityScheme()
+<span class="nc" id="L30">                                .type(SecurityScheme.Type.OAUTH2)</span>
+<span class="nc" id="L31">                                .flows(new OAuthFlows().authorizationCode(new OAuthFlow()</span>
+<span class="nc" id="L32">                                        .authorizationUrl(issuerUri + &quot;/protocol/openid-connect/auth&quot;)</span>
+<span class="nc" id="L33">                                        .tokenUrl(issuerUri + &quot;/protocol/openid-connect/token&quot;)</span>
+<span class="nc" id="L34">                                        .scopes(new Scopes()</span>
+<span class="nc" id="L35">                                                .addString(&quot;openid&quot;, &quot;Authenticate users&quot;)</span>
+<span class="nc" id="L36">                                                .addString(&quot;profile&quot;, &quot;Read user profile&quot;)</span>
+<span class="nc" id="L37">                                                .addString(&quot;email&quot;, &quot;Read email address&quot;))))))</span>
+<span class="nc" id="L38">                .addSecurityItem(new SecurityRequirement()</span>
+<span class="nc" id="L39">                        .addList(&quot;keycloak&quot;, List.of(&quot;openid&quot;, &quot;profile&quot;, &quot;email&quot;)));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

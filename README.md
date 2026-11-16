@@ -23,6 +23,7 @@ docker compose up -d --build --wait
 | http://localhost:8080 | HAProxy — єдина точка входу до `user-service` і `chat-service` |
 | http://localhost:8080/user-service/swagger-ui.html | Swagger `user-service` (через балансувальник, **Authorize** → Keycloak) |
 | http://localhost:8080/chat-service/swagger-ui.html | Swagger `chat-service` |
+| http://localhost:8080/notification-service/swagger-ui.html | Swagger `notification-service` (внутрішній API листів; `POST /api/v1/notifications` — лише SUPERADMIN або сервісний акаунт `user-service`) |
 | http://localhost:8085 | Swagger для OIDC / Admin API Keycloak |
 | http://localhost:8025 | Mailpit: листи, які надсилає `notification-service` (Lab 5) |
 | `localhost:5435` | PostgreSQL `notifications_db`: outbox листів і таблиці Quartz |

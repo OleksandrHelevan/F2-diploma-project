@@ -6,6 +6,25 @@
 
 <!-- RESULTS -->
 
+## Графіки
+
+Згенеровано з [src/results/lab5](../src/results/lab5) скриптом [lab5_charts.py](../src/scripts/lab5_charts.py).
+Ліворуч — throughput (RPS) і частка помилок по ступенях VU, праворуч — перцентилі затримки (логарифмічна шкала).
+
+### Baseline: сценарії A / B / C
+
+![Scenario A (read)](img/lab5/baseline-a.png)
+![Scenario B (write)](img/lab5/baseline-b.png)
+![Scenario C (workflow)](img/lab5/baseline-c.png)
+
+### Scaling: 1 / 2 / 3 інстанси user-service (сценарій A)
+
+![Scaling](img/lab5/scaling.png)
+
+### Caching: кеш вимкнено / увімкнено (сценарій A)
+
+![Caching](img/lab5/caching.png)
+
 ## Методика
 
 ### Сценарії

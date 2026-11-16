@@ -1,0 +1,52 @@
+{
+  "scenario": "scenario-b-write",
+  "description": "Write-intensive: profile updates (PostgreSQL row update + audit + Keycloak Admin API + e-mail hand-off)",
+  "run": "single-b",
+  "environment": "defaults",
+  "stageSeconds": 15,
+  "warmupSeconds": 20,
+  "rows": [
+    {
+      "vus": 10,
+      "requests": 770,
+      "rps": 51.333333333333336,
+      "iterationsPerSecond": 51.333333333333336,
+      "avgMs": 195.09391630649327,
+      "p50Ms": 193.94883700000003,
+      "p95Ms": 325.71247874999983,
+      "p99Ms": 400.9603414899999,
+      "maxMs": 517.171856,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 50,
+      "requests": 1053,
+      "rps": 70.2,
+      "iterationsPerSecond": 70.2,
+      "avgMs": 719.970427190882,
+      "p50Ms": 684.8691,
+      "p95Ms": 1497.0387566,
+      "p99Ms": 1973.4937945200002,
+      "maxMs": 3288.008745,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 200,
+      "requests": 1537,
+      "rps": 102.46666666666667,
+      "iterationsPerSecond": 102.46666666666667,
+      "avgMs": 2034.2474817599248,
+      "p50Ms": 1897.728122,
+      "p95Ms": 3805.0709967999987,
+      "p99Ms": 4685.998505999998,
+      "maxMs": 6619.732978,
+      "errorRate": 0.0071567989590110605,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    }
+  ]
+}

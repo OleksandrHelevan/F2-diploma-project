@@ -1,0 +1,52 @@
+{
+  "scenario": "scenario-a-read",
+  "description": "Read-intensive: own profile (cache) + colleague directory (DB read, replica in Lab 6)",
+  "run": "single-a",
+  "environment": "defaults",
+  "stageSeconds": 15,
+  "warmupSeconds": 20,
+  "rows": [
+    {
+      "vus": 10,
+      "requests": 3762,
+      "rps": 250.8,
+      "iterationsPerSecond": 83.6,
+      "avgMs": 39.826456515948955,
+      "p50Ms": 6.4088315,
+      "p95Ms": 101.872007,
+      "p99Ms": 190.45753059999998,
+      "maxMs": 200.398075,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 50,
+      "requests": 7374,
+      "rps": 491.6,
+      "iterationsPerSecond": 163.86666666666667,
+      "avgMs": 102.37611233577422,
+      "p50Ms": 96.041189,
+      "p95Ms": 294.5582025,
+      "p99Ms": 402.8498026699998,
+      "maxMs": 1001.515093,
+      "errorRate": 0,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    },
+    {
+      "vus": 200,
+      "requests": 7104,
+      "rps": 473.6,
+      "iterationsPerSecond": 157.86666666666667,
+      "avgMs": 434.410155708192,
+      "p50Ms": 111.94075799999999,
+      "p95Ms": 1805.9188854499992,
+      "p99Ms": 2886.8389688600005,
+      "maxMs": 5602.609211,
+      "errorRate": 0.0016891891891891893,
+      "staleReadRate": 0,
+      "workflowP95Ms": 0
+    }
+  ]
+}

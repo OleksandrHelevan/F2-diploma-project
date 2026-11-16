@@ -156,6 +156,7 @@
         "http://localhost:3000/*",
         "http://localhost:8080/user-service/swagger-ui/oauth2-redirect.html",
         "http://localhost:8080/chat-service/swagger-ui/oauth2-redirect.html",
+        "http://localhost:8080/notification-service/swagger-ui/oauth2-redirect.html",
         "http://localhost:8085/oauth2-redirect.html"
       ],
       "webOrigins": [
@@ -185,6 +186,16 @@
           "protocolMapper": "oidc-audience-mapper",
           "config": {
             "included.client.audience": "chat-service",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "notification-service audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "notification-service",
             "id.token.claim": "false",
             "access.token.claim": "true"
           }
@@ -226,6 +237,7 @@
       }
     },
     {
+      "id": "3a3f621b-2937-47a9-8785-a6a57a96f070",
       "username": "superadmin",
       "enabled": true,
       "email": "superadmin@bricklayers.local",
@@ -242,6 +254,7 @@
       ]
     },
     {
+      "id": "4cc9c12b-84b2-4385-82c9-4ee5b91ef2ff",
       "username": "worker",
       "enabled": true,
       "email": "worker@bricklayers.local",
@@ -259,6 +272,7 @@
       ]
     },
     {
+      "id": "b55f6ff0-1574-4fd9-8abe-82af19db106a",
       "username": "foreman",
       "enabled": true,
       "email": "foreman@bricklayers.local",
@@ -276,6 +290,7 @@
       ]
     },
     {
+      "id": "03a7aeb3-2497-4449-ae25-268c73113fa5",
       "username": "supplier",
       "enabled": true,
       "email": "supplier@bricklayers.local",
@@ -293,6 +308,7 @@
       ]
     },
     {
+      "id": "891c19a2-73f6-4bc5-b8b9-d465b56358b1",
       "username": "oleksandrhelevan",
       "enabled": true,
       "email": "oleksandrhelevan@gmail.com",

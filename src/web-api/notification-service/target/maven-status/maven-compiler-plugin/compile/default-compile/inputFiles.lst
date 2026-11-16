@@ -1,5 +1,6 @@
 D:\F2-diploma-project\src\web-api\notification-service\src\main\java\com\bricklayers\notificationservice\async\AsyncConfig.java
 D:\F2-diploma-project\src\web-api\notification-service\src\main\java\com\bricklayers\notificationservice\async\LoggingAsyncExceptionHandler.java
+D:\F2-diploma-project\src\web-api\notification-service\src\main\java\com\bricklayers\notificationservice\config\OpenApiConfig.java
 D:\F2-diploma-project\src\web-api\notification-service\src\main\java\com\bricklayers\notificationservice\config\SecurityConfig.java
 D:\F2-diploma-project\src\web-api\notification-service\src\main\java\com\bricklayers\notificationservice\controller\HealthController.java
 D:\F2-diploma-project\src\web-api\notification-service\src\main\java\com\bricklayers\notificationservice\controller\NotificationController.java
